@@ -1,9 +1,9 @@
 #' Extract values from EE Images or ImageCollections objects
 #'
-#' Extract values from a \code{ee$Image} at the
-#' locations of a geometry object. You can use \code{ee$Geometry$*},
-#' \code{ee$Feature}, \code{ee$FeatureCollection}, sf  or sfc objects. This function
-#' mimicking how \link[raster]{extract} currently works.
+#' Extract values from an \code{ee$Image} at the
+#' locations of a geometry object. Users can use \code{ee$Geometry$*},
+#' \code{ee$Feature}, \code{ee$FeatureCollection}, sf or sfc object to filter
+#' spatially. This function mimicking how \link[raster]{extract} currently works.
 #'
 #' @param x ee$Image.
 #' @param y ee$Geometry$*, ee$Feature, ee$FeatureCollection, sfc or sf objects.
@@ -12,13 +12,21 @@
 #' See details.
 #' @param scale A nominal scale in meters of the Image projection to work in.
 #' By default 1000.
-#' @param sf Logical. Should return a sf object?
+#' @param sf Logical. Should return an sf object?
+#' @param lazy Logical. If TRUE, a \code{\link[future:sequential]{
+#' future::sequential}} object is created to evaluate the task in the future.
+#' Ignore if \code{via} is set as "getInfo". See details.
+#' @param via Character. Method to export the image. Three method are
+#' implemented: "getInfo", "drive", "gcs".
+#' @param container Character. Name of the folder ('drive') or bucket ('gcs')
+#' to be exported into (ignore if \code{via} is not defined as "drive" or
+#' "gcs").
 #' @param quiet Logical. Suppress info message.
 #' @param ... ee$Image$reduceRegions additional parameters. See
 #' \code{ee_help(ee$Image$reduceRegions)} for more details.
 #'
 #' @return A data.frame or an sf object depending on the sf argument.
-#' Column names are extracted from band names, use \code{ee$Image$rename} to
+#' Column names are extracted from band names. Use \code{ee$Image$rename} to
 #' rename the bands of an \code{ee$Image}. See \code{ee_help(ee$Image$rename)}.
 #'
 #' @details
@@ -76,42 +84,64 @@
 #' library(rgee)
 #' library(sf)
 #'
-#' ee_Initialize()
+#' ee_Initialize(gcs = TRUE, drive = TRUE)
 #'
 #' # Define a Image or ImageCollection: Terraclimate
 #' terraclimate <- ee$ImageCollection("IDAHO_EPSCOR/TERRACLIMATE") %>%
-#'   ee$ImageCollection$filterDate("2001-01-01", "2002-01-01") %>%
-#'   ee$ImageCollection$map(
-#'     function(x) {
-#'       date <- ee$Date(x$get("system:time_start"))$format('YYYY_MM_dd')
-#'       name <- ee$String$cat("Terraclimate_pp_", date)
-#'       x$select("pr")$rename(name)
-#'     }
-#'   )
+#'  ee$ImageCollection$filterDate("2001-01-01", "2002-01-01") %>%
+#' ee$ImageCollection$map(
+#'    function(x) {
+#'      date <- ee$Date(x$get("system:time_start"))$format('YYYY_MM_dd')
+#'      name <- ee$String$cat("Terraclimate_pp_", date)
+#'      x$select("pr")$rename(name)
+#'    }
+#'  )
 #'
 #' # Define a geometry
 #' nc <- st_read(
-#'   dsn = system.file("shape/nc.shp", package = "sf"),
-#'   stringsAsFactors = FALSE,
-#'   quiet = TRUE
+#'  dsn = system.file("shape/nc.shp", package = "sf"),
+#'  stringsAsFactors = FALSE,
+#'  quiet = TRUE
 #' )
 #'
 #'
-#' # Extract values
-#'
+#' #Extract values - getInfo
 #' ee_nc_rain <- ee_extract(
-#'   x = terraclimate,
-#'   y = nc,
-#'   scale = 250,
-#'   fun = ee$Reducer$mean(),
-#'   sf = TRUE
+#'  x = terraclimate,
+#'  y = nc["NAME"],
+#'  scale = 250,
+#'  fun = ee$Reducer$mean(),
+#'  sf = TRUE
+#' )
+#'
+#' # Extract values - drive (lazy = TRUE)
+#' ee_nc_rain <- ee_extract(
+#'  x = terraclimate,
+#'  y = nc["NAME"],
+#'  scale = 250,
+#'  fun = ee$Reducer$mean(),
+#'  via = "drive",
+#'  lazy = TRUE,
+#'  sf = TRUE
+#' )
+#' ee_nc_rain <- ee_nc_rain %>% ee_utils_future_value()
+#'
+#' # Extract values - gcs (lazy = FALSE)
+#' ee_nc_rain <- ee_extract(
+#'  x = terraclimate,
+#'  y = nc["NAME"],
+#'  scale = 250,
+#'  fun = ee$Reducer$mean(),
+#'  via = "gcs",
+#'  container = "rgee_dev",
+#'  sf = TRUE
 #' )
 #'
 #' # Spatial plot
 #' plot(
-#'   ee_nc_rain["Terraclimate_pp_2001_11_01"],
-#'   main = "2001 Jan Precipitation - Terraclimate",
-#'   reset = FALSE
+#'  ee_nc_rain["X200101_Terraclimate_pp_2001_01_01"],
+#'  main = "2001 Jan Precipitation - Terraclimate",
+#'  reset = FALSE
 #' )
 #' }
 #' @export
@@ -120,6 +150,9 @@ ee_extract <- function(x,
                        fun = ee$Reducer$mean(),
                        scale = NULL,
                        sf = FALSE,
+                       via = "getInfo",
+                       container = "rgee_backup",
+                       lazy = FALSE,
                        quiet = FALSE,
                        ...) {
   ee_check_packages("ee_extract", c("geojsonio", "sf"))
@@ -174,9 +207,7 @@ ee_extract <- function(x,
     # sf object
   } else if(any(ee_get_spatial_objects('Table') %in%  class(y))) {
     ee_y <- ee$FeatureCollection(y)
-    if (isTRUE(sf)) {
-      sf_y <- ee_as_sf(y, quiet = TRUE)
-    }
+    sf_y <- ee_as_sf(y, quiet = TRUE)
   }
 
   #set ee_ID for identify rows in the data.frame
@@ -192,7 +223,6 @@ ee_extract <- function(x,
 
   # Convert Image into ImageCollection
   x_ic <- bands_to_image_collection(x)
-
 
   # triplets save info about the value, the row_id (ee_ID) and col_id (imageId)
   create_tripplets <- function(img) {
@@ -223,33 +253,93 @@ ee_extract <- function(x,
     })
 
   # Extracting data and passing to sf
-  table_geojson <- table %>%
-    ee$FeatureCollection$getInfo() %>%
-    ee_utils_py_to_r()
-  class(table_geojson) <- "geo_list"
-  table_sf <- geojsonio::geojson_sf(table_geojson)
-  sf::st_geometry(table_sf) <- NULL
-  table_sf <- table_sf[, order(names(table_sf))]
+  if (via == "drive") {
 
-  # Removing helper index's
-  table_sf["id"] <- NULL
-  table_sf["ee_ID"] <- NULL
+    # Getting image ID if it is exist
+    # table_id is the name of the table in the container
+    table_id <- basename(tempfile("rgee_file_"))
 
-  # Remove system:index prefix
-  colnames(table_sf) <- gsub("^[^_]*_","", colnames(table_sf))
+    # Have you loaded the necessary credentials?
+    # Only important for drive or gcs.
+    ee_user <- ee_exist_credentials()
+    dsn <- sprintf("%s/%s.csv", tempdir(), table_id)
+    # From Earth Engine to drive
+    table_task <- ee_init_task_drive_fc(
+      x_fc = table,
+      dsn = dsn,
+      container = container,
+      table_id = table_id,
+      ee_user = ee_user,
+      selectors =  NULL,
+      timePrefix = TRUE,
+      quiet = quiet
+    )
 
-  if (isTRUE(sf)) {
-    table_geometry  <- sf::st_geometry(sf_y)
-    table_sf <- sf_y %>%
-      sf::st_drop_geometry() %>%
-      cbind(table_sf) %>%
-      sf::st_sf(geometry = table_geometry)
+    if(lazy) {
+      prev_plan <- future::plan(future::sequential, .skip = TRUE)
+      on.exit(future::plan(prev_plan, .skip = TRUE), add = TRUE)
+      future::future({
+        ee_extract_to_lazy_exp_drive(table_task, dsn, quiet, sf, sf_y)
+      }, lazy = TRUE)
+    } else {
+      ee_extract_to_lazy_exp_drive(table_task, dsn, quiet, sf, sf_y)
+    }
+  } else if(via == "gcs") {
+
+    # Getting image ID if it is exist
+    # table_id is the name of the table in the container
+    table_id <- basename(tempfile("rgee_file_"))
+
+    # Have you loaded the necessary credentials?
+    # Only important for drive or gcs.
+    ee_user <- ee_exist_credentials()
+    dsn <- sprintf("%s/%s.csv", tempdir(), table_id)
+    # From Earth Engine to drive
+    table_task <- ee_init_task_gcs_fc(
+      x_fc = table,
+      dsn = dsn,
+      container = container,
+      table_id = table_id,
+      ee_user = ee_user,
+      selectors =  NULL,
+      timePrefix = TRUE,
+      quiet = quiet
+    )
+
+    if(lazy) {
+      prev_plan <- future::plan(future::sequential, .skip = TRUE)
+      on.exit(future::plan(prev_plan, .skip = TRUE), add = TRUE)
+      future::future({
+        ee_extract_to_lazy_exp_gcs(table_task, dsn, quiet, sf, sf_y)
+      }, lazy = TRUE)
+    } else {
+      ee_extract_to_lazy_exp_gcs(table_task, dsn, quiet, sf, sf_y)
+    }
   } else {
-    table_sf <- sf_y %>%
-      sf::st_drop_geometry() %>%
-      cbind(table_sf)
+    table_geojson <- table %>%
+      ee$FeatureCollection$getInfo() %>%
+      ee_utils_py_to_r()
+    class(table_geojson) <- "geo_list"
+    table_sf <- geojsonio::geojson_sf(table_geojson)
+    sf::st_geometry(table_sf) <- NULL
+    table_sf <- table_sf[, order(names(table_sf))]
+
+    # Removing helper index's
+    table_sf["id"] <- NULL
+    table_sf["ee_ID"] <- NULL
+    if (isTRUE(sf)) {
+      table_geometry  <- sf::st_geometry(sf_y)
+      table_sf <- sf_y %>%
+        sf::st_drop_geometry() %>%
+        cbind(table_sf) %>%
+        sf::st_sf(geometry = table_geometry)
+    } else {
+      table_sf <- sf_y %>%
+        sf::st_drop_geometry() %>%
+        cbind(table_sf)
+    }
+    table_sf
   }
-  table_sf
 }
 
 #' Converts all bands in an image to an image collection.
@@ -268,4 +358,73 @@ bands_to_image_collection <- function(img) {
     ee$Image$bandNames() %>%
     ee$List$map(ee_utils_pyfunc(bname_to_image)) %>%
     ee$ImageCollection()
+}
+
+
+#' From drive to local (sf). Function to be evaluated in future::plan
+#' @noRd
+ee_extract_to_lazy_exp_drive <- function(table_task, dsn, quiet, sf, sf_y) {
+  # From drive to local
+  table_csv <- ee_sf_drive_local(
+    table_task = table_task,
+    dsn = dsn,
+    metadata = FALSE,
+    public = FALSE,
+    overwrite = TRUE,
+    quiet = quiet
+  )
+
+  # Removing helper index's
+  table_sf <- read.csv(table_csv$dsn)
+  table_sf["system.index"] <- NULL
+  table_sf["ee_ID"] <- NULL
+  table_sf[".geo"] <- NULL
+
+  if (isTRUE(sf)) {
+    table_geometry  <- sf::st_geometry(sf_y)
+    table_sf <- sf_y %>%
+      sf::st_drop_geometry() %>%
+      cbind(table_sf) %>%
+      sf::st_sf(geometry = table_geometry)
+  } else {
+    table_sf <- sf_y %>%
+      sf::st_drop_geometry() %>%
+      cbind(table_sf)
+  }
+  table_sf
+}
+
+
+
+#' From GCS to local (sf). Function to be evaluated in future::plan
+#' @noRd
+ee_extract_to_lazy_exp_gcs <- function(table_task, dsn, quiet, sf, sf_y) {
+  # From GCS to local
+  table_csv <- ee_sf_gcs_local(
+    table_task = table_task,
+    dsn = dsn,
+    metadata = FALSE,
+    public = FALSE,
+    overwrite = TRUE,
+    quiet = quiet
+  )
+
+  # Removing helper index's
+  table_sf <- read.csv(table_csv$dsn)
+  table_sf["system.index"] <- NULL
+  table_sf["ee_ID"] <- NULL
+  table_sf[".geo"] <- NULL
+
+  if (isTRUE(sf)) {
+    table_geometry  <- sf::st_geometry(sf_y)
+    table_sf <- sf_y %>%
+      sf::st_drop_geometry() %>%
+      cbind(table_sf) %>%
+      sf::st_sf(geometry = table_geometry)
+  } else {
+    table_sf <- sf_y %>%
+      sf::st_drop_geometry() %>%
+      cbind(table_sf)
+  }
+  table_sf
 }

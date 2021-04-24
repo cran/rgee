@@ -1,81 +1,9 @@
-#' Return the element at the specified position in a Earth Engine Collection
-#'
-#' @param ee_c ImageCollection or FeatureCollection.
-#' @param index Numeric. Specified position.
-#' @return Depending of \code{ee_c} can return either an ee$FeatureCollection
-#' or ee$ImageCollection.
-#' @examples
-#' \dontrun{
-#' library(rgee)
-#' library(sf)
-#'
-#' ee_Initialize()
-#'
-#' nc <- st_read(system.file("shape/nc.shp", package = "sf")) %>%
-#'   st_transform(4326) %>%
-#'   sf_as_ee()
-#'
-#' ee_s2 <- ee$ImageCollection("COPERNICUS/S2")$
-#'   filterDate("2016-01-01", "2016-01-31")$
-#'   filterBounds(nc)
-#'
-#' ee_s2$size()$getInfo() # 126
-#'
-#' # Get the first 5 elements
-#' ee_get(ee_s2, index = 0:4)$size()$getInfo() # 5
-#' }
-#' @export
-ee_get <- function(ee_c, index = 0) {
-  is_consecutive <- all(diff(index) == 1)
-  if (any(index < 0)) {
-    stop("index must be a positive value")
-  }
-  if (any(class(ee_c) %in%  c("ee.imagecollection.ImageCollection"))) {
-    # Index is a single value?
-    if (length(index) == 1) {
-      ee_c %>%
-        ee$ImageCollection$toList(count = 1, offset = index) %>%
-        ee$ImageCollection()
-    } else {
-      # Index is a n-length vector and consecutive?
-      if (length(index) > 1 & is_consecutive) {
-        ee_c %>%
-          ee$ImageCollection$toList(count = length(index), offset = min(index)) %>%
-          ee$ImageCollection()
-      } else {
-        stop("ee_get only support ascending index order")
-      }
-    }
-  } else  if (any(class(ee_c) %in%  c("ee.featurecollection.FeatureCollection"))) {
-    # Index is a single value?
-    if (length(index) == 1) {
-      ee_c %>%
-        ee$FeatureCollection$toList(count = 1, offset = index) %>%
-        ee$FeatureCollection()
-    } else {
-      # Index is a n-length vector and consecutive?
-      if (length(index) > 1 & is_consecutive) {
-        ee_c %>%
-          ee$FeatureCollection$toList(count = length(index), offset = min(index)) %>%
-          ee$FeatureCollection()
-      } else {
-        stop("ee_get only support ascending index order")
-      }
-    }
-  } else {
-    stop("ee_get only support objects of class FeatureCollection and ImageCollection.",
-         "\nEnter: ", class(ee_c)[1],
-         "\nExpected: ee$ImageCollection or ee$FeatureCollection")
-  }
-}
-
 #' Get the Asset home name
 #' @family path utils
 #' @examples
 #' \dontrun{
 #' library(rgee)
 #' ee_Initialize()
-#'
 #' ee_get_assethome()
 #' }
 #' @return Character. The name of the Earth Engine Asset home
@@ -92,13 +20,13 @@ ee_get_assethome <- function() {
 #' also returned. See details.
 #'
 #' @details
-#' \code{system:time_start} set the start period of data acquisition while
+#' \code{system:time_start} sets the start period of data acquisition while
 #' \code{system:time_end} does the same for the end period. See the
 #' \href{https://developers.google.com/earth-engine/glossary/}{Earth Engine glossary}
 #' for getting more information.
 #'
 #' @return An List object with the elements: id, time_start and time_end
-#' (if the \code{time_end} argument is TRUE).
+#' (only if the \code{time_end} argument is TRUE).
 #' @family date functions
 #' @examples
 #' \dontrun{
@@ -150,14 +78,14 @@ ee_get_date_img <- function(x, time_end = FALSE) {
 #' also returned. See details.
 #'
 #' @details
-#' \code{system:time_start} set the start period of data acquisition while
+#' \code{system:time_start} Sets the start period of data acquisition while
 #' \code{system:time_end} does the same for the end period. See the
 #' \href{https://developers.google.com/earth-engine/glossary/}{Earth Engine glossary}
 #' for getting more information.
 #'
 #' @return A data.frame with the columns: \code{id} (ID of the image),
-#' \code{time_start}, and \code{time_end} (If the argument \code{time_end} is
-#' set as TRUE). The number of rows depends of the number of images
+#' \code{time_start}, and \code{time_end} (only if the argument \code{time_end} is
+#' set as TRUE). The number of rows depends on the number of images
 #' (\code{ee$ImageCollection$size}).
 #'
 #' @family date functions
@@ -239,7 +167,7 @@ ee_get_date_ic <- function(x, time_end = FALSE) {
 #' Get the path where the credentials are stored
 #'
 #' @family path utils
-#' @return A character which represents the path credential of a specific
+#' @return A character that represents the path credential of a specific
 #' user
 #'
 #' @export

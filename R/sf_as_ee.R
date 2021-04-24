@@ -28,7 +28,7 @@
 #' @param command_line_tool_path Character. Path to the Earth Engine command line
 #' tool (CLT). If NULL, rgee assumes that CLT is set in the system PATH.
 #' (ignore if \code{via} is not defined as "gcs_to_asset").
-#' @param overwrite A boolean argument which indicates indicating
+#' @param overwrite A boolean argument that indicates indicating
 #' whether "filename" should be overwritten. Ignore if \code{via} argument
 #' is "getInfo". By default TRUE.
 #' @param quiet Logical. Suppress info message.
@@ -57,7 +57,7 @@
 #' file in the /temp directory. Secondly, using the function \code{local_to_gcs}
 #' will move the shapefile from local to Google Cloud Storage. Finally, using
 #' the function \code{gcs_to_ee_table} the ESRI shapefile will be loaded
-#' to their EE Assets. See \href{https://developers.google.com/earth-engine/guides/importing/}{Importing
+#' to their EE Assets. See \href{https://developers.google.com/earth-engine/guides/table_upload/}{Importing
 #' table data} documentation for more details.
 #'
 #' @examples
@@ -148,6 +148,15 @@ sf_as_ee <- function(x,
       bold(posix_column_names)
     )
     stop(pos_msg)
+  }
+
+  # There is point in the name?
+  x_point_condition <- grepl("\\.",colnames(x))
+  if (any(x_point_condition)) {
+    stop(
+      "Invalid column name(s). Earth Engine does not support the following column names:\n",
+      bold(paste0(colnames(x)[x_point_condition], collapse = ", "))
+    )
   }
 
   if (any(class(x) %in%  "sfg")) {

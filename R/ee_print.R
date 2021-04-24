@@ -3,7 +3,7 @@
 #' Print and return metadata about Spatial Earth Engine Objects.
 #' \code{ee_print} can retrieve information about the number of images
 #' or features, number of bands or geometries, number of pixels, geotransform,
-#' data type, properties and object size.
+#' data type, properties, and object size.
 #'
 #' @param eeobject Earth Engine Object. Available for: Geometry, Feature,
 #' FeatureCollection, Image or ImageCollection.
@@ -15,10 +15,9 @@
 #' is also returned. See \code{rgee::ee_get_date_img} for details.
 #' @param img_band Character. Band name of the \code{ee$Image} to fetch.
 #' Relevant just for \code{ee$ImageCollection} and \code{ee$Image} objects.
-#' @param compression_ratio Numeric. Measurement of the relative reduction
-#' in size of data representation produced by a data compression algorithm
-#' (ignored if \code{eeobject} is not a Image or ImageCollection). By default
-#' is 20.
+#' @param compression_ratio Numeric. Measurement of the relative data size
+#' reduction produced by a data compression algorithm (ignored if \code{eeobject}
+#' is not an \code{ee$Image} or \code{ee$ImageCollection}). By default is 20.
 #' @param clean Logical. If TRUE, the cache will be cleaned.
 #' @param quiet Logical. Suppress info message
 #' @param ... ignored
@@ -98,10 +97,14 @@ ee_print.ee.geometry.Geometry <- function(eeobject,
       ee$String$getInfo() %>%
       sf::st_crs()
 
-    geom_geodesic <- eeobject %>%
-      ee$Geometry$geodesic() %>%
-      ee$ComputedObject$getInfo() %>%
-      ee_utils_py_to_r()
+    geom_geodesic <- suppressWarnings(
+      {
+        eeobject %>%
+          ee$Geometry$geodesic() %>%
+          ee$ComputedObject$getInfo() %>%
+          ee_utils_py_to_r()
+      }
+    )
 
     geom_crs_name <- sprintf("%s (%s)",geom_wkt$Name, geom_info$crs)
     geom_proj4string <- geom_wkt$proj4string
@@ -173,11 +176,16 @@ ee_print.ee.feature.Feature <- function(eeobject,
       ee$String$getInfo() %>%
       sf::st_crs()
 
-    geom_geodesic <- eeobject %>%
-      ee$Feature$geometry() %>%
-      ee$Geometry$geodesic() %>%
-      ee$ComputedObject$getInfo() %>%
-      ee_utils_py_to_r()
+    geom_geodesic <- suppressWarnings(
+      {
+        eeobject %>%
+          ee$Feature$geometry() %>%
+          ee$Geometry$geodesic() %>%
+          ee$ComputedObject$getInfo() %>%
+          ee_utils_py_to_r()
+      }
+    )
+
 
     geom_crs_name <- sprintf("%s (%s)",geom_wkt$Name, geom_info$crs)
     geom_proj4string <- geom_wkt$proj4string
@@ -268,11 +276,15 @@ ee_print.ee.featurecollection.FeatureCollection <- function(eeobject,
       ee$String$getInfo() %>%
       sf::st_crs()
 
-    geom_geodesic <- feature %>%
-      ee$Feature$geometry() %>%
-      ee$Geometry$geodesic() %>%
-      ee$ComputedObject$getInfo() %>%
-      ee_utils_py_to_r()
+    geom_geodesic <- suppressWarnings(
+      {
+        feature %>%
+          ee$Feature$geometry() %>%
+          ee$Geometry$geodesic() %>%
+          ee$ComputedObject$getInfo() %>%
+          ee_utils_py_to_r()
+      }
+    )
 
     geom_crs_name <- sprintf("%s (%s)",geom_wkt$Name, geom_info$crs)
     geom_proj4string <- geom_wkt$proj4string

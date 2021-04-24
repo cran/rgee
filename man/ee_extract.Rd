@@ -10,6 +10,9 @@ ee_extract(
   fun = ee$Reducer$mean(),
   scale = NULL,
   sf = FALSE,
+  via = "getInfo",
+  container = "rgee_backup",
+  lazy = FALSE,
   quiet = FALSE,
   ...
 )
@@ -26,7 +29,18 @@ See details.}
 \item{scale}{A nominal scale in meters of the Image projection to work in.
 By default 1000.}
 
-\item{sf}{Logical. Should return a sf object?}
+\item{sf}{Logical. Should return an sf object?}
+
+\item{via}{Character. Method to export the image. Three method are
+implemented: "getInfo", "drive", "gcs".}
+
+\item{container}{Character. Name of the folder ('drive') or bucket ('gcs')
+to be exported into (ignore if \code{via} is not defined as "drive" or
+"gcs").}
+
+\item{lazy}{Logical. If TRUE, a \code{\link[future:sequential]{
+future::sequential}} object is created to evaluate the task in the future.
+Ignore if \code{via} is set as "getInfo". See details.}
 
 \item{quiet}{Logical. Suppress info message.}
 
@@ -35,14 +49,14 @@ By default 1000.}
 }
 \value{
 A data.frame or an sf object depending on the sf argument.
-Column names are extracted from band names, use \code{ee$Image$rename} to
+Column names are extracted from band names. Use \code{ee$Image$rename} to
 rename the bands of an \code{ee$Image}. See \code{ee_help(ee$Image$rename)}.
 }
 \description{
-Extract values from a \code{ee$Image} at the
-locations of a geometry object. You can use \code{ee$Geometry$*},
-\code{ee$Feature}, \code{ee$FeatureCollection}, sf  or sfc objects. This function
-mimicking how \link[raster]{extract} currently works.
+Extract values from an \code{ee$Image} at the
+locations of a geometry object. Users can use \code{ee$Geometry$*},
+\code{ee$Feature}, \code{ee$FeatureCollection}, sf or sfc object to filter
+spatially. This function mimicking how \link[raster]{extract} currently works.
 }
 \details{
 The reducer functions that return one value are:
@@ -100,42 +114,64 @@ of its inputs.
 library(rgee)
 library(sf)
 
-ee_Initialize()
+ee_Initialize(gcs = TRUE, drive = TRUE)
 
 # Define a Image or ImageCollection: Terraclimate
 terraclimate <- ee$ImageCollection("IDAHO_EPSCOR/TERRACLIMATE") \%>\%
-  ee$ImageCollection$filterDate("2001-01-01", "2002-01-01") \%>\%
-  ee$ImageCollection$map(
-    function(x) {
-      date <- ee$Date(x$get("system:time_start"))$format('YYYY_MM_dd')
-      name <- ee$String$cat("Terraclimate_pp_", date)
-      x$select("pr")$rename(name)
-    }
-  )
+ ee$ImageCollection$filterDate("2001-01-01", "2002-01-01") \%>\%
+ee$ImageCollection$map(
+   function(x) {
+     date <- ee$Date(x$get("system:time_start"))$format('YYYY_MM_dd')
+     name <- ee$String$cat("Terraclimate_pp_", date)
+     x$select("pr")$rename(name)
+   }
+ )
 
 # Define a geometry
 nc <- st_read(
-  dsn = system.file("shape/nc.shp", package = "sf"),
-  stringsAsFactors = FALSE,
-  quiet = TRUE
+ dsn = system.file("shape/nc.shp", package = "sf"),
+ stringsAsFactors = FALSE,
+ quiet = TRUE
 )
 
 
-# Extract values
-
+#Extract values - getInfo
 ee_nc_rain <- ee_extract(
-  x = terraclimate,
-  y = nc,
-  scale = 250,
-  fun = ee$Reducer$mean(),
-  sf = TRUE
+ x = terraclimate,
+ y = nc["NAME"],
+ scale = 250,
+ fun = ee$Reducer$mean(),
+ sf = TRUE
+)
+
+# Extract values - drive (lazy = TRUE)
+ee_nc_rain <- ee_extract(
+ x = terraclimate,
+ y = nc["NAME"],
+ scale = 250,
+ fun = ee$Reducer$mean(),
+ via = "drive",
+ lazy = TRUE,
+ sf = TRUE
+)
+ee_nc_rain <- ee_nc_rain \%>\% ee_utils_future_value()
+
+# Extract values - gcs (lazy = FALSE)
+ee_nc_rain <- ee_extract(
+ x = terraclimate,
+ y = nc["NAME"],
+ scale = 250,
+ fun = ee$Reducer$mean(),
+ via = "gcs",
+ container = "rgee_dev",
+ sf = TRUE
 )
 
 # Spatial plot
 plot(
-  ee_nc_rain["Terraclimate_pp_2001_11_01"],
-  main = "2001 Jan Precipitation - Terraclimate",
-  reset = FALSE
+ ee_nc_rain["X200101_Terraclimate_pp_2001_01_01"],
+ main = "2001 Jan Precipitation - Terraclimate",
+ reset = FALSE
 )
 }
 }

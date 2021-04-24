@@ -4,6 +4,9 @@ knitr::opts_chunk$set(
 )
 
 ## ----eval = FALSE-------------------------------------------------------------
+#  install.packages("rgee")
+
+## ----eval = FALSE-------------------------------------------------------------
 #  remotes::install_github("r-spatial/rgee")
 
 ## ----eval = FALSE-------------------------------------------------------------
@@ -15,7 +18,7 @@ knitr::opts_chunk$set(
 #  #ee_reattach() # reattach ee as a reserve word
 #  # Initialize just Earth Engine
 #  ee_Initialize()
-#  ee_Initialize(email = 'csaybar@gmail.com') # Use the argument email is not mandatory
+#  ee_Initialize(email = 'csaybar@gmail.com') # Use the argument email is not mandatory, but it's helpful to change of EE user.
 #  # Initialize Earth Engine and GD
 #  ee_Initialize(email = 'csaybar@gmail.com', drive = TRUE)
 #  # Initialize Earth Engine and GCS

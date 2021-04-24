@@ -35,7 +35,7 @@ if \code{via} argument is "getInfo".}
 tool (CLT). If NULL, rgee assumes that CLT is set in the system PATH.
 (ignore if \code{via} is not defined as "gcs_to_asset").}
 
-\item{overwrite}{A boolean argument which indicates indicating
+\item{overwrite}{A boolean argument that indicates indicating
 whether "filename" should be overwritten. Ignore if \code{via} argument
 is "getInfo". By default TRUE.}
 
@@ -89,7 +89,7 @@ third option 'gcs_to_asset'. This option firstly saves the sf object as a *.shp
 file in the /temp directory. Secondly, using the function \code{local_to_gcs}
 will move the shapefile from local to Google Cloud Storage. Finally, using
 the function \code{gcs_to_ee_table} the ESRI shapefile will be loaded
-to their EE Assets. See \href{https://developers.google.com/earth-engine/guides/importing/}{Importing
+to their EE Assets. See \href{https://developers.google.com/earth-engine/guides/table_upload/}{Importing
 table data} documentation for more details.
 }
 \examples{

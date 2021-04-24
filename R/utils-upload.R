@@ -5,7 +5,7 @@
 #' @param x Character. filename.
 #' @param bucket bucket name you are uploading to
 #' @param quiet Logical. Suppress info message.
-#' @return Character which represents the full path of the object in the GCS
+#' @return Character that represents the full path of the object in the GCS
 #' bucket specified.
 #' @family generic upload functions
 #' @examples
@@ -183,7 +183,7 @@ gcs_to_ee_table <- function(manifest,
 
 #' Move a GeoTIFF image from GCS to their EE assets
 #'
-#' @param manifest Character. manifest upload file. See \code{\link{ee_utils_create_manifest_image}}.
+#' @param manifest Character. Manifest upload file. See \code{\link{ee_utils_create_manifest_image}}.
 #' @param overwrite Logical. If TRUE, the assetId will be overwritten if
 #' it exists.
 #' @param command_line_tool_path Character. Path to the Earth Engine command line
@@ -204,29 +204,30 @@ gcs_to_ee_table <- function(manifest,
 #' x <- read_stars(tif)
 #' assetId <- sprintf("%s/%s",ee_get_assethome(),'stars_l7')
 #'
-#' # # 2. From local to gcs
-#' # gs_uri <- local_to_gcs(
-#' #   x = tif,
-#' #   bucket = 'rgee_dev' # Insert your own bucket here!
-#' # )
-#' #
-#' # # 3. Create an Image Manifest
-#' # manifest <- ee_utils_create_manifest_image(gs_uri, assetId)
-#' #
-#' # # 4. From GCS to Earth Engine
-#' # gcs_to_ee_image(
-#' #   manifest = manifest,
-#' #   overwrite = TRUE
-#' # )
-#' #
-#' # # OPTIONAL: Monitoring progress
-#' # ee_monitoring()
-#' #
-#' # # OPTIONAL: Display results
-#' # ee_stars_01 <- ee$Image(assetId)
-#' # # ee_stars_01$bandNames()$getInfo()
-#' # Map$centerObject(ee_stars_01)
-#' # Map$addLayer(ee_stars_01, list(min = 0, max = 255, bands = c("b3", "b2", "b1")))
+#' # 2. From local to gcs
+#' gs_uri <- local_to_gcs(
+#'   x = tif,
+#'   bucket = 'rgee_dev' # Insert your own bucket here!
+#' )
+#'
+#' # 3. Create an Image Manifest
+#' manifest <- ee_utils_create_manifest_image(gs_uri, assetId)
+#'
+#' # 4. From GCS to Earth Engine
+#' gcs_to_ee_image(
+#'   manifest = manifest,
+#'   overwrite = TRUE
+#' )
+#'
+#' # OPTIONAL: Monitoring progress
+#' ee_monitoring()
+#'
+#' # OPTIONAL: Display results
+#' ee_stars_01 <- ee$Image(assetId)
+#' ee_stars_01$bandNames()$getInfo()
+#'
+#' Map$centerObject(ee_stars_01)
+#' Map$addLayer(ee_stars_01, list(min = 0, max = 255, bands = c("b3", "b2", "b1")))
 #' }
 #' @export
 gcs_to_ee_image <- function(manifest,
@@ -373,7 +374,7 @@ ee_sf_comp <- function(){
     "MULTILINESTRING", "POINT", "MULTIPOINT")
 }
 
-#' Convert a R list into a JSON file
+#' Convert an R list into a JSON file in the temp() file
 #' @param x List to convert into a JSON file.
 #' @return A JSON file saved in a /tmp dir.
 #' @examples
@@ -400,27 +401,27 @@ ee_utils_create_json <- function(x) {
 
 #' Create a manifest to upload an image
 #'
-#' Create a manifest to upload a GeoTIFF to Earth Engine assets folder. The
-#' "manifest" is simply a JSON file which describe all the upload parameters. See
+#' Create a manifest to upload a GeoTIFF to Earth Engine asset folder. The
+#' "manifest" is simply a JSON file that describe all the upload parameters. See
 #' \url{https://developers.google.com/earth-engine/guides/image_manifest} to get more
 #' details.
 #'
-#' @param gs_uri Character. GCS full path of the image to upload to Earth Engine assets
+#' @param gs_uri Character. GCS full path of the image to upload to Earth Engine assets,
 #' e.g. gs://rgee_dev/l8.tif
 #' @param assetId Character. How to call the file once uploaded
 #' to the Earth Engine Asset. e.g. users/datacolecfbf/l8.
 #' @param properties List. Set of parameters to be set up as properties
 #' of the EE object.
-#' @param start_time Character. Sets the start time property (system:time_start)
+#' @param start_time Character. Sets the start time property (system:time_start).
 #' It could be a number (timestamp) or a date.
-#' @param end_time Character. Sets the end time property (system:time_end)
+#' @param end_time Character. Sets the end time property (system:time_end).
 #' It could be a number (timestamp) or a date.
 #' @param pyramiding_policy Character. The pyramid reduction policy to use.
-#' @param returnList Logical. If TRUE will return the "manifest" as a list otherwise
+#' @param returnList Logical. If TRUE will return the "manifest" as a list. Otherwise,
 #' will return a JSON file.
 #' @param quiet Logical. Suppress info message.
 #'
-#' @return If \code{returnList} is TRUE a list otherwise a JSON file.
+#' @return If \code{returnList} is TRUE, a list otherwise a JSON file.
 #' @family generic upload functions
 #'
 #' @examples
@@ -495,7 +496,7 @@ ee_utils_create_manifest_image <- function(gs_uri,
 #' Create a manifest to upload a table
 #'
 #' Create a manifest to upload a zipped shapefile to Earth Engine assets folder. The
-#' "manifest" is simply a JSON file which describe all the upload parameters. See
+#' "manifest" is simply a JSON file that describe all the upload parameters. See
 #' \url{https://developers.google.com/earth-engine/guides/image_manifest} to get more
 #' details.
 #'
@@ -505,15 +506,15 @@ ee_utils_create_manifest_image <- function(gs_uri,
 #' to the Earth Engine Asset. e.g. users/datacolecfbf/nc.
 #' @param properties List. Set of parameters to be set up as properties
 #' of the EE object.
-#' @param start_time Character. Sets the start time property (system:time_start)
+#' @param start_time Character. Sets the start time property (system:time_start).
 #' It could be a number (timestamp) or a date.
-#' @param end_time Character. Sets the end time property (system:time_end)
+#' @param end_time Character. Sets the end time property (system:time_end).
 #' It could be a number (timestamp) or a date.
 #' @param returnList Logical. If TRUE will return the "manifest" as a list otherwise
 #' will return a JSON file.
 #' @param quiet Logical. Suppress info message.
 #'
-#' @return If \code{returnList} is TRUE a list otherwise a JSON file.
+#' @return If \code{returnList} is TRUE, a list otherwise a JSON file.
 #' @family generic upload functions
 #'
 #' @examples

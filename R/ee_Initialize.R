@@ -2,21 +2,22 @@
 #'
 #' Authorize rgee to manage Earth Engine resources, Google
 #' Drive, and Google Cloud Storage. The \code{ee_initialize()} via
-#' web-browser will ask to sign in to your Google account and
+#' web-browser will ask users to sign into your Google account and
 #' allows you to grant permission to manage resources. This function is
 #' a wrapper around `rgee::ee$Initialize()`.
 #'
 #' @param email Character (optional, e.g. `data.colec.fbf@gmail.com`). The email
-#' argument is used to create a folder inside the path \code{~/.config/earthengine/}
-#' that save all credentials for a specific Google identity.
+#' argument is used to create a folder inside the path \cr
+#' \code{~/.config/earthengine/} that save all credentials for a specific
+#' Google identity.
 #'
 #' @param drive Logical (optional). If TRUE, the drive credential
-#' will be cached in the path \code{~/.config/earthengine/}.
+#' is cached in the path \code{~/.config/earthengine/}.
 #'
 #' @param gcs Logical (optional). If TRUE, the Google Cloud Storage
-#' credential will be cached in the path \code{~/.config/earthengine/}.
+#' credential is cached in the path \code{~/.config/earthengine/}.
 #'
-#' @param display Logical. If TRUE display the earthengine authentication URL.
+#' @param display Logical. If TRUE, display the earthengine authentication URL.
 #'
 #' @param quiet Logical. Suppress info messages.
 #'
@@ -26,13 +27,13 @@
 #' @importFrom crayon blue green black red bold white
 #'
 #' @details
-#' \code{ee_Initialize(...)} can manage Google drive and Google
+#' \code{ee_Initialize(...)} can manage Google Drive, and Google
 #' Cloud Storage resources using the R packages googledrive and
 #' googlecloudStorageR, respectively. By default, rgee does not require
-#' them, these are only necessary to enable rgee I/O functionality.
+#' them. These are only necessary to enable rgee I/O functionality.
 #' All user credentials are saved in the directory
 #' \code{~/.config/earthengine/}, if a user does not specify the email
-#' argument all user credentials will be saved in a subdirectory
+#' argument all user credentials are saved in a subdirectory
 #' called \code{~/.config/earthengine/ndef}.
 #'
 #' @family session management functions
@@ -74,7 +75,7 @@ ee_Initialize <- function(email = NULL,
       )
     )
   }
-  ee_utils <- ee_connect_to_py(ee_current_version, n = 5)
+  ee_utils <- ee_connect_to_py(path = ee_current_version, n = 5)
   earthengine_version <- ee_utils_py_to_r(ee_utils$ee_getversion())
 
   if (!quiet) {
@@ -139,7 +140,7 @@ ee_Initialize <- function(email = NULL,
         blue("Google Drive credentials:")
       )
     }
-    drive_credentials <- ee_create_credentials_drive(email)
+    drive_credentials <- ee_create_credentials_drive(email, quiet = quiet)
     if (!quiet) {
       cat(
         "\r",
@@ -247,6 +248,16 @@ ee_Initialize <- function(email = NULL,
     }
   }
   # ee_check_python_packages(quiet = TRUE)
+
+  # Add Dataset attribute
+  eeDataset <- jsonlite::read_json(system.file("dataset.json", package="rgee"))
+  eeDataset_b <- ee_Dataset_creator(eeDataset)
+
+  ee$FeatureCollection$Dataset <- eeDataset_b$fc
+  ee$ImageCollection$Dataset <- eeDataset_b$ic
+  ee$Image$Dataset <- eeDataset_b$image
+
+
   invisible(TRUE)
 }
 
@@ -258,7 +269,7 @@ ee_Initialize <- function(email = NULL,
 #' \item Second, use the file.copy function to set up the
 #' "credentials" file, so that the Earth Engine Python API can read it.
 #' \item Finally, if the file.copy fails at copy it, the credentials
-#' will download from Internet, you will be directed to a web browser.
+#' will download from Internet. You will be directed to a web browser.
 #' Sign in to your Google account to be granted rgee
 #' permission to operate on your behalf with Google Earth Engine.
 #' These user credentials are cached in a folder below your
@@ -293,7 +304,12 @@ ee_create_credentials_earthengine <- function(email_clean, display) {
     earthengine_auth <- ee$oauth$get_authorization_url(code_challenge)
     # Display URL?
     if (display) {
-      message("\n", earthengine_auth)
+      message("\n To authorize access needed by Earth Engine, open the following URL in a web browser and follow the instructions: \n \n", earthengine_auth, "\n \n The authorization workflow will generate a code, which you should paste in the box below")
+      auth_code <- readline("Enter Earth Engine Authentication: ")
+      token <- ee$oauth$request_token(auth_code, code_verifier)
+      credential <- sprintf('{"refresh_token":"%s"}', token)
+      write(credential, main_ee_credential)
+      write(credential, user_ee_credential)
     }
     ee_save_eecredentials(
       url = earthengine_auth,
@@ -318,7 +334,7 @@ ee_save_eecredentials <- function(url, code_verifier, main_ee_credential, user_e
 
 #' Create credentials - Google Drive
 #' @noRd
-ee_create_credentials_drive <- function(email) {
+ee_create_credentials_drive <- function(email, quiet) {
   ee_check_packages("ee_Initialize", "googledrive")
   # Set folder to save Google Drive Credentials
   oauth_func_path <- system.file("python/ee_utils.py", package = "rgee")
@@ -347,6 +363,16 @@ ee_create_credentials_drive <- function(email) {
           cache = ee_path_user
         )
       )
+      new_full_credentials <- list.files(path = ee_path_user, full.names = TRUE)
+      new_drive_condition <- grepl(".*_.*@.*", basename(new_full_credentials))
+      if (sum(new_drive_condition) > 1) {
+        files_credentials_time <- file.info(new_full_credentials[new_drive_condition])$ctime
+        drive_credential_to_remove <- new_full_credentials[which.min(files_credentials_time)]
+        if (!quiet) {
+          message("Removing previous Google Drive Token ....")
+        }
+        file.remove(drive_credential_to_remove)
+      }
       break
     }
   }
@@ -401,6 +427,7 @@ ee_create_credentials_gcs <- function(email) {
       "> https://console.cloud.google.com/apis/credentials/serviceaccountkey/",
       bold("Until you do not save a SKA file, the following functions will not work:"),
       "- rgee::ee_gcs_to_local()",
+      "- ee_extract(..., via = \"gcs\")",
       "- ee_as_raster(..., via = \"gcs\")",
       "- ee_as_stars(..., via = \"gcs\")",
       "- ee_as_sf(..., via = \"gcs\")",
@@ -655,11 +682,11 @@ create_table <- function(user, wsc, quiet = FALSE) {
     cat("\n",
         user,
         wsc,
+        ee_symbol,
+        wsc,
         gmail_symbol,
         wsc,
-        gcs_symbol,
-        wsc,
-        ee_symbol
+        gcs_symbol
       )
   }
   user_str <- data.frame(EE = ee_count, GD = gd_count, GCS = gcs_count)
@@ -732,7 +759,7 @@ ee_init_message <- function() {
 #' env, before to display a error message.
 #' @noRd
 ee_connect_to_py <- function(path, n = 5) {
-  ee_utils <- try(ee_source_python(path), silent = TRUE)
+  ee_utils <- try(ee_source_python(oauth_func_path = path), silent = TRUE)
   # counter added to prevent problems with reticulate
   con_reticulate_counter <- 1
   while (any(class(ee_utils) %in%  "try-error")) {
@@ -778,4 +805,14 @@ ee_check_packages <- function(fn_name, packages) {
     )
     stop(error_msg)
   }
+}
+
+
+#' Dataset Creator
+#' @noRd
+ee_Dataset_creator <- function(eeDataset) {
+  eedataset_img <- lapply(eeDataset[["Image"]], function(x) ee$Image(x))
+  eedataset_ic <- lapply(eeDataset[["ImageCollection"]], function(x) ee$ImageCollection(x))
+  eedataset_fc <- lapply(eeDataset[["FeatureCollection"]], function(x) ee$FeatureCollection(x))
+  list(image = eedataset_img, ic = eedataset_ic, fc = eedataset_fc)
 }

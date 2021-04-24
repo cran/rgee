@@ -14,31 +14,47 @@ ee_gcs_to_local(
 )
 }
 \arguments{
-\item{task}{List generated after finished correctly a EE task. See details.}
+\item{task}{List generated after finished an EE task correctly. See details.}
 
 \item{dsn}{Character. Output filename. If missing, a temporary
-file will be assigned.}
+file (i.e. \code{tempfile()}) is assigned.}
 
-\item{public}{Logical. If TRUE, a public link to the image will be created.}
+\item{public}{Logical. If TRUE, a public link to Google Cloud Storage
+resource is created.}
 
-\item{metadata}{Logical. If TRUE, export the metadata related to the image.}
+\item{metadata}{Logical. If TRUE, export the metadata related to the Google
+Cloud Storage resource. See details.}
 
-\item{overwrite}{A boolean argument which indicates indicating
+\item{overwrite}{A boolean argument that indicates indicating
 whether "filename" should be overwritten. By default TRUE.}
 
 \item{quiet}{Logical. Suppress info message}
 }
 \value{
-filename character vector.
+If \code{metadata} is FALSE, will return the filename of the Google
+Cloud Storage resource on their system. Otherwise, a list with two elements
+(\code{dns} and \code{metadata}) is returned.
 }
 \description{
 Move results of an EE task saved in Google Cloud Storage to a local
 directory.
 }
 \details{
-The task argument needs "COMPLETED" task state to work, since the parameters
-necessaries to locate the file into google cloud storage are obtained from
+The task argument needs "COMPLETED" task state to work due to that the parameters
+necessaries to locate the file into Google Cloud Storage are obtained from \cr
 \code{ee$batch$Export$*$toCloudStorage(...)$start()$status()}.
+
+If the argument \code{metadata} is TRUE, a list with the
+following elements is exported join with the output filename (dsn):
+
+\itemize{
+\item{\bold{ee_id: }}{Name of the Earth Engine task.}
+\item{\bold{gcs_name: }}{Name of the Table in Google Cloud Storage.}
+\item{\bold{gcs_bucket: }}{Name of the bucket.}
+\item{\bold{gcs_fileFormat: }}{Format of the table.}
+\item{\bold{gcs_public_link: }}{Download link to the table.}
+\item{\bold{gcs_URI: }}{gs:// link to the table.}
+}
 }
 \examples{
 \dontrun{

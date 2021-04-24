@@ -4,10 +4,18 @@
 \alias{ee_clean_pyenv}
 \title{Remove rgee system variables from .Renviron}
 \usage{
-ee_clean_pyenv()
+ee_clean_pyenv(Renviron = "global")
+}
+\arguments{
+\item{Renviron}{Character. If it is "global" the environment variables in
+the .Renviron located in the Sys.getenv("HOME") folder will be deleted. On the
+other hand, if it is "local" the environment variables in the .Renviron on the
+working directory (getwd()) will be deleted. Finally, users can also enter a
+specific absolute path (see examples).}
 }
 \value{
-No return value, called for cleaning environmental variables in their system.
+No return value, called for cleaning environmental variables in
+their system.
 }
 \description{
 Remove rgee system variables from .Renviron
