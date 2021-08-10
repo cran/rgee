@@ -181,6 +181,8 @@ Map$addLayer(
   visParams = list(min=0, max=20000, bands = c("B4", "B3", "B2")),
   name = "l8_right"
 )
+
+Map$reset()
 }
 
 ## ------------------------------------------------
@@ -190,6 +192,7 @@ Map$addLayer(
 \dontrun{
 library(sf)
 library(rgee)
+library(rgeeExtra)
 
 ee_Initialize()
 
@@ -205,11 +208,44 @@ ee_s2 <- ee$ImageCollection("COPERNICUS/S2")$
   ee_get(0:2)
 
 Map$centerObject(nc$geometry())
-Map$addLayers(eeObject = ee_s2, legend = TRUE, position = "right")
-Map$reset()
+Map$addLayers(eeObject = ee_s2,position = "right")
 
 # digging up the metadata
 Map$previous_map_right$rgee$tokens
+
+Map$reset()
+}
+
+## ------------------------------------------------
+## Method `R6Map$addLegend`
+## ------------------------------------------------
+
+\dontrun{
+library(leaflet)
+library(rgee)
+ee_Initialize()
+
+Map$reset()
+
+# Load MODIS ImageCollection
+imgcol <- ee$ImageCollection$Dataset$MODIS_006_MOD13Q1
+
+# Parameters for visualization
+labels <- c("good", "marginal", "snow", "cloud")
+cols   <- c("#999999", "#00BFC4", "#F8766D", "#C77CFF")
+vis_qc <- list(min = 0, max = 3, palette = cols, bands = "SummaryQA", values = labels)
+
+# Create interactive map
+m_qc <- Map$addLayer(imgcol$median(), vis_qc, "QC")
+
+# continous palette
+Map$addLegend(vis_qc)
+
+# categorical palette
+Map$addLegend(vis_qc, name = "Legend1", color_mapping = "discrete")
+
+# character palette
+Map$addLegend(vis_qc, name = "Legend2", color_mapping = "character")
 }
 }
 \section{Public fields}{
@@ -242,6 +278,7 @@ style.}
 \item \href{#method-centerObject}{\code{R6Map$centerObject()}}
 \item \href{#method-addLayer}{\code{R6Map$addLayer()}}
 \item \href{#method-addLayers}{\code{R6Map$addLayers()}}
+\item \href{#method-addLegend}{\code{R6Map$addLegend()}}
 \item \href{#method-clone}{\code{R6Map$clone()}}
 }
 }
@@ -432,7 +469,12 @@ Centers the map view on a given object. If no zoom level is provided, it
 will be predicted according to the bounds of the Earth Engine object
 specified.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{R6Map$centerObject(eeObject, zoom = NULL, maxError = ee$ErrorMargin(1))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{R6Map$centerObject(
+  eeObject,
+  zoom = NULL,
+  maxError = ee$ErrorMargin(1),
+  titiler_server = "https://api.cogeo.xyz/"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -444,6 +486,8 @@ specified.
 
 \item{\code{maxError}}{Max error when input image must be reprojected to an
 explicitly requested result projection or geodesic state.}
+
+\item{\code{titiler_server}}{TiTiler endpoint. Defaults to "https://api.cogeo.xyz/".}
 }
 \if{html}{\out{</div>}}
 }
@@ -481,7 +525,7 @@ Adds a given Earth Engine spatial object to the map as a layer
   shown = TRUE,
   opacity = 1,
   position = NULL,
-  legend = FALSE
+  titiler_server = "https://api.cogeo.xyz/"
 )}\if{html}{\out{</div>}}
 }
 
@@ -502,7 +546,7 @@ Adds a given Earth Engine spatial object to the map as a layer
 the left panel. Otherwise, if it is "right" the map will be displayed in the right panel.
 By default NULL (No panel will be created).}
 
-\item{\code{legend}}{Should a legend be plotted?. Only the legend of the first image is displayed.}
+\item{\code{titiler_server}}{TiTiler endpoint. Defaults to "https://api.cogeo.xyz/".}
 }
 \if{html}{\out{</div>}}
 }
@@ -551,6 +595,8 @@ Map$addLayer(
   visParams = list(min=0, max=20000, bands = c("B4", "B3", "B2")),
   name = "l8_right"
 )
+
+Map$reset()
 }
 }
 \if{html}{\out{</div>}}
@@ -571,8 +617,7 @@ Adds a given ee$ImageCollection to the map as multiple layers.
   name = NULL,
   shown = TRUE,
   position = NULL,
-  opacity = 1,
-  legend = FALSE
+  opacity = 1
 )}\if{html}{\out{</div>}}
 }
 
@@ -594,8 +639,6 @@ the left panel. Otherwise, if it is "right" the map will be displayed in the rig
 By default NULL (No panel will be created).}
 
 \item{\code{opacity}}{The layer's opacity is represented as a number between 0 and 1. Defaults to 1.}
-
-\item{\code{legend}}{Should a legend be plotted?. Only the legend of the first image is displayed.}
 }
 \if{html}{\out{</div>}}
 }
@@ -607,6 +650,7 @@ A \code{EarthEngineMap} object.
 \preformatted{\dontrun{
 library(sf)
 library(rgee)
+library(rgeeExtra)
 
 ee_Initialize()
 
@@ -622,11 +666,87 @@ ee_s2 <- ee$ImageCollection("COPERNICUS/S2")$
   ee_get(0:2)
 
 Map$centerObject(nc$geometry())
-Map$addLayers(eeObject = ee_s2, legend = TRUE, position = "right")
-Map$reset()
+Map$addLayers(eeObject = ee_s2,position = "right")
 
 # digging up the metadata
 Map$previous_map_right$rgee$tokens
+
+Map$reset()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-addLegend"></a>}}
+\if{latex}{\out{\hypertarget{method-addLegend}{}}}
+\subsection{Method \code{addLegend()}}{
+Adds a color legend to an EarthEngineMap.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{R6Map$addLegend(
+  visParams,
+  name = "Legend",
+  position = c("bottomright", "topright", "bottomleft", "topleft"),
+  color_mapping = "numeric",
+  opacity = 1,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{visParams}}{List of parameters for visualization.}
+
+\item{\code{name}}{The title of the legend.}
+
+\item{\code{position}}{Character. The position of the legend. By default bottomright.}
+
+\item{\code{color_mapping}}{Map data values (numeric or factor/character) to
+colors according to a given palette. Use "numeric" ("discrete") for continuous
+(categorical) data. For display characters use "character" and add to visParams
+the element "values" containing the desired character names.}
+
+\item{\code{opacity}}{The legend's opacity is represented as a number between 0
+and 1. Defaults to 1.}
+
+\item{\code{...}}{Extra legend creator arguments. See \link[leaflet]{addLegend}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A \code{EarthEngineMap} object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+library(leaflet)
+library(rgee)
+ee_Initialize()
+
+Map$reset()
+
+# Load MODIS ImageCollection
+imgcol <- ee$ImageCollection$Dataset$MODIS_006_MOD13Q1
+
+# Parameters for visualization
+labels <- c("good", "marginal", "snow", "cloud")
+cols   <- c("#999999", "#00BFC4", "#F8766D", "#C77CFF")
+vis_qc <- list(min = 0, max = 3, palette = cols, bands = "SummaryQA", values = labels)
+
+# Create interactive map
+m_qc <- Map$addLayer(imgcol$median(), vis_qc, "QC")
+
+# continous palette
+Map$addLegend(vis_qc)
+
+# categorical palette
+Map$addLegend(vis_qc, name = "Legend1", color_mapping = "discrete")
+
+# character palette
+Map$addLegend(vis_qc, name = "Legend2", color_mapping = "character")
 }
 }
 \if{html}{\out{</div>}}

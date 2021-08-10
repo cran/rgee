@@ -18,13 +18,13 @@ knitr::opts_chunk$set(
 #  #ee_reattach() # reattach ee as a reserve word
 #  # Initialize just Earth Engine
 #  ee_Initialize()
-#  ee_Initialize(email = 'csaybar@gmail.com') # Use the argument email is not mandatory, but it's helpful to change of EE user.
+#  ee_Initialize(user = 'csaybar@gmail.com') # Use the argument email is not mandatory, but it's helpful to change of EE user.
 #  # Initialize Earth Engine and GD
-#  ee_Initialize(email = 'csaybar@gmail.com', drive = TRUE)
+#  ee_Initialize(user = 'csaybar@gmail.com', drive = TRUE)
 #  # Initialize Earth Engine and GCS
-#  ee_Initialize(email = 'csaybar@gmail.com', gcs = TRUE)
+#  ee_Initialize(user = 'csaybar@gmail.com', gcs = TRUE)
 #  # Initialize Earth Engine, GD and GCS
-#  ee_Initialize(email = 'csaybar@gmail.com', drive = TRUE, gcs = TRUE)
+#  ee_Initialize(user = 'csaybar@gmail.com', drive = TRUE, gcs = TRUE)
 
 ## ----eval = FALSE-------------------------------------------------------------
 #  ee_get_earthengine_path()

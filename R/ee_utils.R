@@ -4,7 +4,7 @@
 #' @return An R object
 #' @export
 ee_utils_py_to_r <- function(x) {
-  p_r <- suppressWarnings(try(py_to_r(x),silent = TRUE))
+  p_r <- suppressWarnings(try(py_to_r(x), silent = TRUE))
   if (class(p_r) %in% 'try-error') {
     return(x)
   } else {
@@ -131,3 +131,102 @@ ee_utils_dataset_display <- function(ee_search_dataset) {
   invisible(TRUE)
 }
 
+
+
+#' Return metadata of a COG tile server
+#'
+#' @param resource Character that represents a COG tile server file.
+#' @param titiler_server TiTiler endpoint. Defaults to "https://api.cogeo.xyz/".
+#' @param visParams Visualization parameters see "https://api.cogeo.xyz/docs".
+#' @return A metadata list for a COG file.
+#' @examples
+#' \dontrun{
+#'  library(rgee)
+#'
+#' server <- "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/"
+#' file <- "SkySat_Freeport_s03_20170831T162740Z3.tif"
+#' resource <- paste0(server, file)
+#' visParams <- list(nodata = 0, expression = "B3, B2, B1", rescale = "3000, 13500")
+#' ee_utils_cog_metadata(resource, visParams)
+#' }
+#' @export
+ee_utils_cog_metadata <- function(resource, visParams, titiler_server = "https://api.cogeo.xyz/") {
+  response <- httr::GET(
+    url = sprintf("%s/cog/metadata", titiler_server),
+    config = httr::accept_json(),
+    query = c(list("url" = resource), visParams)
+  )
+  httr::content(response, type="application/json")
+}
+
+
+
+#' The value of a future or the values of all elements in a container
+#'
+#' Gets the value of a future or the values of all elements (including futures)
+#' in a container such as a list, an environment, or a list environment.
+#' If one or more futures is unresolved, then this function blocks until all
+#' queried futures are resolved.
+#'
+#' @author Henrik Bengtsson <https://github.com/HenrikBengtsson/>
+#'
+#' @param future, x A Future, an environment, a list, or a list environment.
+#'
+#' @param stdout If TRUE, standard output captured while resolving futures
+#' is relayed, otherwise not.
+#'
+#' @param signal If TRUE, \link[base]{conditions} captured while resolving
+#' futures are relayed, otherwise not.
+#'
+#' @param \dots All arguments used by the S3 methods.
+#'
+#' @return
+#' `value()` of a Future object returns the value of the future, which can
+#' be any type of \R object.
+#'
+#' `value()` of a list, an environment, or a list environment returns an
+#' object with the same number of elements and of the same class.
+#' Names and dimension attributes are preserved, if available.
+#' All future elements are replaced by their corresponding `value()` values.
+#' For all other elements, the existing object is kept as-is.
+#'
+#' If `signal` is TRUE and one of the futures produces an error, then
+#' that error is produced.
+#'
+#' @export
+ee_utils_future_value <- function(future, stdout = TRUE, signal = TRUE, ...) {
+  ee_check_packages("ee_utils_future_value", "future")
+  if (is.list(future)) {
+    # if all the elements in a list are of the class SequentialFuture.
+    condition1 <- all(
+      sapply(future, function(x) any(class(x) %in% "SequentialFuture"))
+    )
+    if (condition1) {
+      lazy_batch_extract <- future %>%
+        future::value(stdout = stdout, signal = signal, ...)
+      # Is the list a results of run ee_imagecollection_to_local?
+      if(is(future, "ee_imagecollection")) {
+        dsn <- lapply(lazy_batch_extract, '[[', 1)
+        metadata <- lapply(lazy_batch_extract, function(x) attr(x, "metadata"))
+        # If metadata is NULL means that the user run:
+        # ee_imagecollection_to_local(..., add_metadata=FALSE)
+        if (any(sapply(metadata, is.null))) {
+          unlist(dsn)
+        } else {
+          mapply(
+            function(x, y) list(dsn = x, metadata = y),
+            dsn, metadata,
+            SIMPLIFY=FALSE
+          )
+        }
+      } else {
+        lazy_batch_extract
+      }
+    } else {
+      stop("Impossible to use ee_utils_future_value in a list ",
+           "with elements of a class different from SequentialFuture.")
+    }
+  } else {
+    future %>% future::value(stdout = stdout, signal = signal, ...)
+  }
+}

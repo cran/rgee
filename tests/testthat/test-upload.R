@@ -2,6 +2,8 @@ context("rgee: ee_upload test")
 skip_if_no_pypkg()
 # -------------------------------------------------------------------------
 
+ee_Initialize(gcs = TRUE, drive = TRUE)
+
 test_that("local_to_gcs - character",{
   skip_if_no_credentials()
   # Define an image.
@@ -57,4 +59,13 @@ test_that("gcs_to_ee_image ", {
     overwrite = TRUE
   )
   expect_equal(result,sprintf("%s/stars_l7", ee_get_assethome()))
+})
+
+
+test_that("ee_as_proxystars ", {
+  tif <- system.file("tif/L7_ETMs.tif", package = "stars")
+  x <- suppressWarnings(raster::raster(tif))
+  xx <- suppressWarnings(rgee:::ee_as_proxystars(x))
+  expect_s3_class(xx, "stars")
+  expect_error(rgee:::ee_as_proxystars(list(a=10)))
 })

@@ -155,9 +155,8 @@ test_that("Map ee$Image(0)", {
 test_that("Map ee$Image", {
   Map$centerObject(image)
   m1 <- Map$addLayer(
-    image$normalizedDifference(c("B5", "B4")),
-    legend = TRUE
-  )
+    image$normalizedDifference(c("B5", "B4"))
+  ) + Map$addLegend(list(min = 0, max = 1))
   expect_s3_class(m1, "leaflet")
 })
 
@@ -195,22 +194,47 @@ test_that("Map ee$ImageCollection", {
   e1 <- ee$Image(0)
   e2 <- ee$Image(0)
   mx <- Map$addLayer(e1, name = "Lesly") +
-  Map$addLayer(e2, name = "Lesly", legend = TRUE)
+  Map$addLayer(e2, name = "Lesly")
   expect_s3_class(mx, "leaflet")
 })
 
 test_that("Map + same name & legend", {
   e1 <- Map$addLayer(ee$Image(0), name = "Lesly")
-  e2 <- Map$addLayer(ee$Image(0), name = "Lesly", legend = TRUE)
-  m1 <- e1 + e2
+  e2 <- Map$addLayer(ee$Image(0), name = "Lesly")
+  m1 <- e1 + e2 + Map$addLegend(list(min = 0, max = 0, palette = "black"), color_mapping = "discrete")
   expect_s3_class(m1, "leaflet")
 })
 
 test_that("Map | comparison operator", {
   e1 <- Map$addLayer(ee$Image(0), name = "Lesly")
-  e2 <- Map$addLayer(ee$Image(0), name = "Lesly", legend = TRUE)
+  e2 <- Map$addLayer(ee$Image(0), name = "Lesly")
   mc1 <- e1 | e2
   mc2 <- e2 | e1
   expect_s3_class(mc1, "leaflet")
   expect_s3_class(mc2, "leaflet")
 })
+
+# ee_mapViewLayersControl
+test_that("ee_mapViewLayersControl", {
+  map <- Map$addLayer(ee$Image(0))
+  map.types <- "Esri.WorldImagery"
+  names <- "dss"
+  native.crs <- TRUE
+  mm5 <- rgee:::ee_mapViewLayersControl(map, map.types, names, native.crs)
+  expect_s3_class(mm5, "leaflet")
+})
+
+# COG testing
+test_that("COG testing", {
+  resource <- "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/SkySat_Freeport_s03_20170831T162740Z3.tif"
+  visParams <- list(nodata = 0, expression = "B1*1+B2*4+B3*2", rescale = "0, 2000", colormap_name = "viridis")
+  Map <- rgee::R6Map$new()
+  Map$centerObject(resource)
+  m1 <- Map$addLayer(resource, visParams=visParams)
+  expect_equal(m1$rgee$opacity, 1)
+
+  resource <- "sss"
+  expect_error(Map$centerObject(resource))
+  expect_error(Map$addLayer(resource))
+})
+

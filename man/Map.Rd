@@ -9,7 +9,7 @@ An object of class environment with the
 following functions:
 \itemize{
 \item  \strong{addLayer(eeObject, visParams, name = NULL, shown = TRUE,
-opacity = 1, legend = FALSE)}: Adds a given EE object to the map as a layer. \cr
+opacity = 1)}: Adds a given EE object to the map as a layer. \cr
 \itemize{
 \item \strong{eeObject:} The object to add to the interactive map.\cr
 \item \strong{visParams:} List of parameters for visualization.
@@ -19,11 +19,9 @@ See details.\cr
 layer should be on by default. \cr
 \item \strong{opacity:} The layer's opacity is represented as a number
 between 0 and 1. Defaults to 1. \cr
-\item \strong{legend:} Should a legend be plotted?. Ignore if \code{eeObject}
-is not a single-band ee$Image.
 }
 \item  \strong{addLayers(eeObject, visParams, name = NULL, shown = TRUE,
-opacity = 1, legend = FALSE)}: Adds a given ee$ImageCollection to the map
+opacity = 1)}: Adds a given ee$ImageCollection to the map
 as multiple layers. \cr
 \itemize{
 \item \strong{eeObject:} The ee$ImageCollection to add to the interactive map.\cr
@@ -35,10 +33,25 @@ layers should be on by default. \cr
 \item \strong{opacity:} The layer's opacity is represented as a number
 between 0 and 1. Defaults to 1. \cr
 \item \strong{nmax:} Numeric. The maximum number of images to display.
-By default 5. \cr
-\item \strong{legend:} Should a legend be plotted?. Only the legend of
-the first image is displayed.
+By default 5.
 }
+
+\item  \strong{addLegend(visParams, name = "Legend", position = c("bottomright",
+"topright", "bottomleft", "topleft"), color_mapping= "numeric", opacity = 1, ...)}:
+Adds a given ee$ImageCollection to the map as multiple layers. \cr
+\itemize{
+\item \strong{visParams:} List of parameters for visualization.\cr
+\item \strong{name:} The title of the legend.\cr
+\item \strong{position:} Character. The position of the legend. By default bottomright. \cr
+\item \strong{color_mapping:} Map data values (numeric or factor/character) to
+colors according to a given palette. Use "numeric" ("discrete") for continuous
+(categorical) data. For display characters use "character" and add to visParams
+the element "values" containing the desired character names. \cr
+\item \strong{opacity:} The legend's opacity is represented as a number between 0
+and 1. Defaults to 1. \cr
+\item \strong{...:} Extra legend creator arguments. See \link[leaflet]{addLegend}. \cr
+}
+
 \item \strong{setCenter(lon = 0, lat = 0, zoom = NULL)}: Centers the map
 view at the given coordinates with the given zoom level. If no zoom level
 is provided, it uses 1 by default.
@@ -123,8 +136,10 @@ default 3.
 }
 \examples{
 \dontrun{
+library(rgeeExtra)
 library(rgee)
 library(sf)
+
 ee_Initialize()
 
 # Case 1: Geometry*
@@ -169,7 +184,7 @@ ee_s2 <- ee$ImageCollection("COPERNICUS/S2")$
   filterBounds(nc) \%>\%
   ee_get(0:4)
 Map$centerObject(nc$geometry())
-m5 <- Map$addLayers(ee_s2, legend = TRUE)
+m5 <- Map$addLayers(ee_s2)
 m5
 
 # Case 6: Map comparison
@@ -177,16 +192,38 @@ image <- ee$Image("LANDSAT/LC08/C01/T1/LC08_044034_20140318")
 Map$centerObject(image)
 m_ndvi <- Map$addLayer(
   eeObject = image$normalizedDifference(list("B5", "B4")),
-  visParams = list(max = 0.7),
-  name = "SF_NDVI",
-  legend = TRUE
-)
+  visParams = list(min = 0, max = 0.7),
+  name = "SF_NDVI"
+) + Map$addLegend(list(min = 0, max = 0.7), name = "NDVI", position = "bottomright", bins = 4)
 m6 <- m4 | m_ndvi
 m6
 
 # Case 7: digging up the metadata
 m6$rgee$tokens
 m5$rgee$tokens
+
+# Case 8: COG support
+server <- "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/"
+file <- "SkySat_Freeport_s03_20170831T162740Z3.tif"
+resource <- paste0(server, file)
+# See parameters here: https://api.cogeo.xyz/docs
+# visParams <- list(nodata = 0)
+visParams <- list(
+  nodata = 0,
+  expression = "B1*1+B2*4+B3*2",
+  rescale = "0, 2000",
+  colormap_name = "viridis"
+)
+
+Map$centerObject(resource)
+Map$addLayer(resource, visParams = visParams, shown = TRUE)
+
+server <- "https://storage.googleapis.com/pdd-stac/disasters/"
+file <- "hurricane-harvey/0831/20170831_172754_101c_3B_AnalyticMS.tif"
+resource <- paste0(server, file)
+visParams <- list(nodata = 0, expression = "B3, B2, B1", rescale = "3000, 13500")
+Map$centerObject(resource)
+Map$addLayer(resource, visParams = visParams, shown = TRUE)
 }
 }
 \keyword{datasets}

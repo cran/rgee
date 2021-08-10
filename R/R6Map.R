@@ -242,6 +242,7 @@ R6Map <- R6::R6Class(
     #' @param zoom The zoom level, from 1 to 24. By default NULL.
     #' @param maxError Max error when input image must be reprojected to an
     #' explicitly requested result projection or geodesic state.
+    #' @param titiler_server TiTiler endpoint. Defaults to "https://api.cogeo.xyz/".
     #' @return No return value, called to set zoom.
     #' @examples
     #' \dontrun{
@@ -256,8 +257,13 @@ R6Map <- R6::R6Class(
     #' }
     centerObject = function(eeObject,
                             zoom = NULL,
-                            maxError = ee$ErrorMargin(1)) {
-      viewer_params <- private$get_center(eeObject, zoom, maxError)
+                            maxError = ee$ErrorMargin(1),
+                            titiler_server = "https://api.cogeo.xyz/") {
+      if (inherits(eeObject, "character")) {
+        viewer_params <- private$centerObject_COG(eeObject, titiler_server)
+      } else {
+        viewer_params <- private$get_center(eeObject, zoom, maxError)
+      }
       self$setCenter(viewer_params$lon, viewer_params$lat, viewer_params$zoom)
     },
 
@@ -270,11 +276,10 @@ R6Map <- R6::R6Class(
     #' @param name The name of layers.
     #' @param shown A flag indicating whether layers should be on by default.
     #' @param opacity The layer's opacity is represented as a number between 0 and 1. Defaults to 1.
-    #' @param legend Should a legend be plotted?. Only the legend of the first image is displayed.
     #' @param position Character. Activate panel creation. If "left" the map will be displayed in
     #' the left panel. Otherwise, if it is "right" the map will be displayed in the right panel.
     #' By default NULL (No panel will be created).
-    #'
+    #' @param titiler_server TiTiler endpoint. Defaults to "https://api.cogeo.xyz/".
     #' @return An `EarthEngineMap` object.
     #'
     #' @examples
@@ -318,6 +323,8 @@ R6Map <- R6::R6Class(
     #'   visParams = list(min=0, max=20000, bands = c("B4", "B3", "B2")),
     #'   name = "l8_right"
     #' )
+    #'
+    #' Map$reset()
     #'}
     addLayer = function(eeObject,
                         visParams = NULL,
@@ -325,12 +332,29 @@ R6Map <- R6::R6Class(
                         shown = TRUE,
                         opacity = 1,
                         position = NULL,
-                        legend = FALSE) {
+                        titiler_server = "https://api.cogeo.xyz/") {
       # check packages
       ee_check_packages("Map$addLayer", c("jsonlite", "leaflet", "leafem"))
+
+      if (inherits(eeObject, "character")) {
+        ee_check_packages("Map$addLayer", c("jsonlite", "leaflet", "leafem", "httr"))
+        return(private$addCOG(
+          resource = eeObject,
+          visParams = visParams,
+          name = name,
+          shown = shown,
+          opacity = opacity,
+          position = position,
+          titiler_server = titiler_server
+        ))
+      }
+
       if (is.null(visParams)) {
         visParams <- list()
       }
+
+      # Remove values element (It is useful for Map$addLegend)
+      visParams[["values"]] = NULL
 
       # Earth Engine Spatial object
       ee_spatial_object <- ee_get_spatial_objects("Simple")
@@ -344,7 +368,6 @@ R6Map <- R6::R6Class(
 
       if (any(class(eeObject) %in% ee_get_spatial_objects("Table"))) {
         features <- ee$FeatureCollection(eeObject)
-
 
         # If vizparams is NULL
         width <- 2
@@ -397,10 +420,6 @@ R6Map <- R6::R6Class(
         position = position
       )
 
-      if (legend) {
-        map <- ee_add_legend(map, eeObject, visParams, name)
-      }
-
       if (isTRUE(self$save_maps)) {
         # Save the previous map in previous_map_left or previous_map_right
         # according to posisa tion argument.
@@ -409,7 +428,6 @@ R6Map <- R6::R6Class(
         map
       }
     },
-
     #' @description
     #'
     #' Adds a given ee$ImageCollection to the map as multiple layers.
@@ -420,7 +438,6 @@ R6Map <- R6::R6Class(
     #' @param name The name of layers.
     #' @param shown A flag indicating whether layers should be on by default.
     #' @param opacity The layer's opacity is represented as a number between 0 and 1. Defaults to 1.
-    #' @param legend Should a legend be plotted?. Only the legend of the first image is displayed.
     #' @param position Character. Activate panel creation. If "left" the map will be displayed in
     #' the left panel. Otherwise, if it is "right" the map will be displayed in the right panel.
     #' By default NULL (No panel will be created).
@@ -430,6 +447,7 @@ R6Map <- R6::R6Class(
     #' \dontrun{
     #' library(sf)
     #' library(rgee)
+    #' library(rgeeExtra)
     #'
     #' ee_Initialize()
     #'
@@ -445,11 +463,12 @@ R6Map <- R6::R6Class(
     #'   ee_get(0:2)
     #'
     #' Map$centerObject(nc$geometry())
-    #' Map$addLayers(eeObject = ee_s2, legend = TRUE, position = "right")
-    #' Map$reset()
+    #' Map$addLayers(eeObject = ee_s2,position = "right")
     #'
     #' # digging up the metadata
     #' Map$previous_map_right$rgee$tokens
+    #'
+    #' Map$reset()
     #' }
     addLayers = function(eeObject,
                          visParams = NULL,
@@ -457,8 +476,7 @@ R6Map <- R6::R6Class(
                          name = NULL,
                          shown = TRUE,
                          position = NULL,
-                         opacity = 1,
-                         legend = FALSE) {
+                         opacity = 1) {
       # check packages
       ee_check_packages("Map$addLayers", c("jsonlite", "leaflet"))
 
@@ -479,6 +497,7 @@ R6Map <- R6::R6Class(
       m_img_list <- list()
 
       if (is.null(name)) {
+        # Get names (system:id) for each image from the ImageCollection
         name <- tryCatch(
           expr = eeObject %>%
             ee$ImageCollection$aggregate_array("system:id") %>%
@@ -487,7 +506,33 @@ R6Map <- R6::R6Class(
             basename(),
           error = function(e) sprintf("untitled_%02d", seq_len(eeObject_size))
         )
+
+        # if name is NULL
         if (length(name) == 0 | is.null(name)) name <- sprintf("untitled_%02d", seq_len(eeObject_size))
+
+        # all the images from the ee.ImageCollection must have a system:id
+        if (length(name) != eeObject_size) {
+          message(
+            paste0(
+              "Some ee.Image does not have a 'system:id' property, locating does ee.Image ...",
+              " This could take some time ..."
+            )
+          )
+          lnames <- rep(NA, eeObject_size)
+          null_counter <- 1
+          for (index in seq_len(eeObject_size) - 1) {
+            lname <- ee_get(eeObject, index = index)$first()$get("system:id")$getInfo()
+            if (is.null(lname)) {
+              lname <- sprintf("layer_%02d", null_counter)
+              null_counter <- null_counter + 1
+              message(
+                sprintf("Assigning name %s to the ee.Image of index [%s]", lname, index + 1)
+              )
+            }
+            lnames[index + 1]  <- basename(lname)
+          }
+          name <- lnames
+        }
       }
 
       if (length(name) == 1) {
@@ -508,8 +553,7 @@ R6Map <- R6::R6Class(
             name = name[index],
             shown = shown,
             opacity = opacity,
-            position = position,
-            legend = legend
+            position = position
           )
         } else {
           m_img <- self$addLayer(
@@ -518,8 +562,7 @@ R6Map <- R6::R6Class(
             name = name[index],
             shown = shown,
             opacity = opacity,
-            position = position,
-            legend = FALSE
+            position = position
           )
         }
         m_img_list[[index]] <- m_img
@@ -528,9 +571,118 @@ R6Map <- R6::R6Class(
       if (isFALSE(self$save_maps)) {
         Reduce('+', m_img_list)
       }
+    },
+
+    #' @description
+    #'
+    #' Adds a color legend to an EarthEngineMap.
+    #'
+    #' @param visParams List of parameters for visualization.
+    #' @param name The title of the legend.
+    #' @param position Character. The position of the legend. By default bottomright.
+    #' @param color_mapping Map data values (numeric or factor/character) to
+    #' colors according to a given palette. Use "numeric" ("discrete") for continuous
+    #' (categorical) data. For display characters use "character" and add to visParams
+    #' the element "values" containing the desired character names.
+    #' @param opacity The legend's opacity is represented as a number between 0
+    #' and 1. Defaults to 1.
+    #' @param ... Extra legend creator arguments. See \link[leaflet]{addLegend}.
+    #'
+    #' @return A `EarthEngineMap` object.
+    #'
+    #' @examples
+    #' \dontrun{
+    #' library(leaflet)
+    #' library(rgee)
+    #' ee_Initialize()
+    #'
+    #' Map$reset()
+    #'
+    #' # Load MODIS ImageCollection
+    #' imgcol <- ee$ImageCollection$Dataset$MODIS_006_MOD13Q1
+    #'
+    #' # Parameters for visualization
+    #' labels <- c("good", "marginal", "snow", "cloud")
+    #' cols   <- c("#999999", "#00BFC4", "#F8766D", "#C77CFF")
+    #' vis_qc <- list(min = 0, max = 3, palette = cols, bands = "SummaryQA", values = labels)
+    #'
+    #' # Create interactive map
+    #' m_qc <- Map$addLayer(imgcol$median(), vis_qc, "QC")
+    #'
+    #' # continous palette
+    #' Map$addLegend(vis_qc)
+    #'
+    #' # categorical palette
+    #' Map$addLegend(vis_qc, name = "Legend1", color_mapping = "discrete")
+    #'
+    #' # character palette
+    #' Map$addLegend(vis_qc, name = "Legend2", color_mapping = "character")
+    #' }
+    addLegend = function(visParams,
+                         name = "Legend",
+                         position = c("bottomright", "topright", "bottomleft", "topleft"),
+                         color_mapping = "numeric",
+                         opacity = 1,
+                         ...) {
+      if (!is.list(visParams)) {
+        stop("visParams should be a list")
+      }
+      visParams_is_null <- (is.null(visParams[["min"]]) | is.null(visParams[["max"]]))
+      if (visParams_is_null) {
+        stop("visParams should have at least the following elements: min and max.")
+      }
+
+      if (is.null(visParams[["palette"]])) {
+        visParams[["palette"]] <- c("black", "white")
+      }
+
+      # Select one position
+      position <- match.arg(position)
+
+      # Create leaflet color mapping
+      if (is.character(color_mapping)) {
+        if (color_mapping == "numeric") {
+          pal <- leaflet::colorNumeric(visParams$palette, domain = NULL)
+          values <- c(visParams$min, visParams$max)
+        } else if (color_mapping == "discrete" | color_mapping == "categorical") {
+          pal <- leaflet::colorFactor(visParams$palette, domain = NULL)
+          values <- visParams$min:visParams$max
+        }  else if (color_mapping == "character") {
+          pal <- leaflet::colorFactor(visParams$palette, domain = NULL)
+          if (is.null(visParams$values)) {
+            stop(
+              "visParams needs the argument values. For instance:\n",
+              "visParams <- list(palette = c(\"red\",\"blue\",\"green\"), values = LETTERS[1:3])"
+            )
+          }
+          values_chr <- visParams$values
+          values <- factor(values_chr, levels = values_chr)
+        }
+      } else {
+        stop(
+          sprintf("color_mapping is a %s. ", class(color_mapping))
+        )
+      }
+
+      # add legend to the map
+      extra_args <- list(...)
+      legend_args <- list(
+        position = position,
+        pal = pal,
+        values = values,
+        opacity = opacity,
+        title = name
+      ) %>% append(extra_args)
+
+      if (isTRUE(self$save_maps)) {
+        # Save the previous map in previous_map_left or previous_map_right
+        # according to posisa tion argument.
+        private$save_map(legend_args, position = NULL)
+      } else {
+        legend_args
+      }
     }
   ),
-
   private = list(
     get_previous_map_right = function() {
       self$previous_map_right
@@ -552,6 +704,91 @@ R6Map <- R6::R6Class(
     },
     set_zoom = function(val) {
       self$zoom <- val
+    },
+    centerObject_COG = function(resource, titiler_server) {
+      # check packages
+      ee_check_packages("Map$centerObject_COG", c("jsonlite", "leaflet", "leafem", "httr"))
+
+      # COG service
+      titiler_server_service <- sprintf("%s/%s", titiler_server, "cog/tilejson.json")
+
+      # GET tilejson.json
+      response <- httr::GET(
+        url = titiler_server_service,
+        config = httr::accept_json(),
+        query = list(
+          "url" = resource
+        )
+      )
+
+      if (response$status_code != 200) {
+        stop("eeObject is neither a COG resource nor an EE spatial object.")
+      }
+
+      jsonInfo <- httr::content(response, type="application/json")
+
+      lon <- jsonInfo$center[[1]]
+      lat <- jsonInfo$center[[2]]
+      zoom <- ee_getZoom(jsonInfo)
+      list(lon = lon, lat = lat, zoom = zoom)
+    },
+    addCOG = function(resource,
+                      visParams = NULL,
+                      name = NULL,
+                      shown = TRUE,
+                      opacity = 1,
+                      position = NULL,
+                      titiler_server = "https://api.cogeo.xyz/") {
+      # check packages
+      ee_check_packages("Map$addCOG", c("jsonlite", "leaflet", "leafem", "httr"))
+
+      # COG service
+      titiler_server_service <- sprintf("%s/%s", titiler_server, "cog/tilejson.json")
+
+      # Remove values element (It is useful for Map$addLegend)
+      visParams[["values"]] = NULL
+
+      # If name is null try to obtain from image metadata if not untitled_
+      # would be the name.
+      if (is.null(name)) {
+        name <- tryCatch(
+          expr = ee_get_system_id(eeObject),
+          error = function(e) basename(tempfile(pattern = "untitled_"))
+        )
+        if (is.null(name)) name <- basename(tempfile(pattern = "untitled_"))
+      }
+
+      # GET tilejson.json
+      response <- httr::GET(
+        url = titiler_server_service,
+        config = httr::accept_json(),
+        query = c(list("url" = resource), visParams)
+      )
+
+      if (response$status_code != 200) {
+        stop("eeObject is neither a COG resource nor an EE spatial object.")
+      }
+
+      jsonInfo <- httr::content(response, type="application/json")
+      tile <- jsonInfo$tiles[[1]]
+
+      # Using the previous token create a map using leaflet package
+      map <- private$ee_addTile(
+        tile = tile,
+        name = name,
+        visParams = visParams,
+        shown = shown,
+        opacity = opacity,
+        position = position
+      )
+
+      if (isTRUE(self$save_maps)) {
+        # Save the previous map in previous_map_left or previous_map_right
+        # according to posisa tion argument.
+        private$save_map(map, position = position)
+      } else {
+        map
+      }
     },
     get_center = function(eeObject, zoom, maxError) {
       if (any(class(eeObject) %in% "ee.featurecollection.FeatureCollection")) {
@@ -614,18 +851,6 @@ R6Map <- R6::R6Class(
       m <- private$leaflet_default()
       m$x$setView[[1]] <- c(self$lat, self$lon)
       m$x$setView[[2]] <- if (is.null(self$zoom)) 1 else self$zoom
-
-      # EarthEngine Map parameters
-      # m$rgee$tokens <- NA
-      # m$rgee$name <- NA
-      # m$rgee$opacity <- NA
-      # m$rgee$shown <- NA
-      # m$rgee$position <- NA
-      # # legend parameters
-      # m$rgee$min <- NA
-      # m$rgee$max <- NA
-      # m$rgee$palette <-  list(NA)
-      # m$rgee$legend <-  NA
       m
     },
     ee_addTile = function(tile, name, visParams, shown, opacity, position) {
@@ -648,11 +873,6 @@ R6Map <- R6::R6Class(
       m$rgee$shown <- shown
       m$rgee$position <- position
 
-      # legend parameters
-      m$rgee$min <- if (is.null(visParams$min)) NA else visParams$min
-      m$rgee$max <- if (is.null(visParams$max)) NA else visParams$max
-      m$rgee$palette <-  if (is.null(visParams$palette)) list(NA) else list(visParams$palette)
-      m$rgee$legend <-  FALSE
       m
     },
     save_map = function(map, position = NULL) {
@@ -762,7 +982,7 @@ R6Map <- R6::R6Class(
 #' following functions:
 #' \itemize{
 #'   \item  \strong{addLayer(eeObject, visParams, name = NULL, shown = TRUE,
-#'   opacity = 1, legend = FALSE)}: Adds a given EE object to the map as a layer. \cr
+#'   opacity = 1)}: Adds a given EE object to the map as a layer. \cr
 #'   \itemize{
 #'     \item \strong{eeObject:} The object to add to the interactive map.\cr
 #'     \item \strong{visParams:} List of parameters for visualization.
@@ -772,11 +992,9 @@ R6Map <- R6::R6Class(
 #'     layer should be on by default. \cr
 #'     \item \strong{opacity:} The layer's opacity is represented as a number
 #'      between 0 and 1. Defaults to 1. \cr
-#'     \item \strong{legend:} Should a legend be plotted?. Ignore if \code{eeObject}
-#'     is not a single-band ee$Image.
 #'   }
 #'   \item  \strong{addLayers(eeObject, visParams, name = NULL, shown = TRUE,
-#'   opacity = 1, legend = FALSE)}: Adds a given ee$ImageCollection to the map
+#'   opacity = 1)}: Adds a given ee$ImageCollection to the map
 #'   as multiple layers. \cr
 #'   \itemize{
 #'     \item \strong{eeObject:} The ee$ImageCollection to add to the interactive map.\cr
@@ -788,10 +1006,25 @@ R6Map <- R6::R6Class(
 #'     \item \strong{opacity:} The layer's opacity is represented as a number
 #'      between 0 and 1. Defaults to 1. \cr
 #'      \item \strong{nmax:} Numeric. The maximum number of images to display.
-#'      By default 5. \cr
-#'     \item \strong{legend:} Should a legend be plotted?. Only the legend of
-#'     the first image is displayed.
+#'      By default 5.
 #'   }
+#'
+#'   \item  \strong{addLegend(visParams, name = "Legend", position = c("bottomright",
+#'   "topright", "bottomleft", "topleft"), color_mapping= "numeric", opacity = 1, ...)}:
+#'    Adds a given ee$ImageCollection to the map as multiple layers. \cr
+#'   \itemize{
+#'     \item \strong{visParams:} List of parameters for visualization.\cr
+#'     \item \strong{name:} The title of the legend.\cr
+#'     \item \strong{position:} Character. The position of the legend. By default bottomright. \cr
+#'     \item \strong{color_mapping:} Map data values (numeric or factor/character) to
+#'     colors according to a given palette. Use "numeric" ("discrete") for continuous
+#'     (categorical) data. For display characters use "character" and add to visParams
+#'     the element "values" containing the desired character names. \cr
+#'     \item \strong{opacity:} The legend's opacity is represented as a number between 0
+#'     and 1. Defaults to 1. \cr
+#'     \item \strong{...:} Extra legend creator arguments. See \link[leaflet]{addLegend}. \cr
+#'   }
+#'
 #'   \item \strong{setCenter(lon = 0, lat = 0, zoom = NULL)}: Centers the map
 #'   view at the given coordinates with the given zoom level. If no zoom level
 #'   is provided, it uses 1 by default.
@@ -865,8 +1098,10 @@ R6Map <- R6::R6Class(
 #'
 #' @examples
 #' \dontrun{
+#' library(rgeeExtra)
 #' library(rgee)
 #' library(sf)
+#'
 #' ee_Initialize()
 #'
 #' # Case 1: Geometry*
@@ -911,7 +1146,7 @@ R6Map <- R6::R6Class(
 #'   filterBounds(nc) %>%
 #'   ee_get(0:4)
 #' Map$centerObject(nc$geometry())
-#' m5 <- Map$addLayers(ee_s2, legend = TRUE)
+#' m5 <- Map$addLayers(ee_s2)
 #' m5
 #'
 #' # Case 6: Map comparison
@@ -919,16 +1154,38 @@ R6Map <- R6::R6Class(
 #' Map$centerObject(image)
 #' m_ndvi <- Map$addLayer(
 #'   eeObject = image$normalizedDifference(list("B5", "B4")),
-#'   visParams = list(max = 0.7),
-#'   name = "SF_NDVI",
-#'   legend = TRUE
-#' )
+#'   visParams = list(min = 0, max = 0.7),
+#'   name = "SF_NDVI"
+#' ) + Map$addLegend(list(min = 0, max = 0.7), name = "NDVI", position = "bottomright", bins = 4)
 #' m6 <- m4 | m_ndvi
 #' m6
 #'
 #' # Case 7: digging up the metadata
 #' m6$rgee$tokens
 #' m5$rgee$tokens
+#'
+#' # Case 8: COG support
+#' server <- "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/"
+#' file <- "SkySat_Freeport_s03_20170831T162740Z3.tif"
+#' resource <- paste0(server, file)
+#' # See parameters here: https://api.cogeo.xyz/docs
+#' # visParams <- list(nodata = 0)
+#' visParams <- list(
+#'   nodata = 0,
+#'   expression = "B1*1+B2*4+B3*2",
+#'   rescale = "0, 2000",
+#'   colormap_name = "viridis"
+#' )
+#'
+#' Map$centerObject(resource)
+#' Map$addLayer(resource, visParams = visParams, shown = TRUE)
+#'
+#' server <- "https://storage.googleapis.com/pdd-stac/disasters/"
+#' file <- "hurricane-harvey/0831/20170831_172754_101c_3B_AnalyticMS.tif"
+#' resource <- paste0(server, file)
+#' visParams <- list(nodata = 0, expression = "B3, B2, B1", rescale = "3000, 13500")
+#' Map$centerObject(resource)
+#' Map$addLayer(resource, visParams = visParams, shown = TRUE)
 #' }
 #' @export
 Map <- R6Map$new(save_maps = FALSE)

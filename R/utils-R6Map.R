@@ -4,7 +4,13 @@
 #' https://stackoverflow.com/questions/6048975/
 #' @noRd
 ee_getZoom <- function(eeObject, maxError = ee$ErrorMargin(1)) {
-  bounds <- ee_get_boundary(eeObject, maxError)
+  # added for support COG
+  if (inherits(eeObject, "list")) {
+    bounds <- unlist(eeObject$bounds)
+    names(bounds) <- c("xmin", "ymin", "xmax", "ymax")
+  } else {
+    bounds <- ee_get_boundary(eeObject, maxError)
+  }
 
   WORLD_DIM <- list(height = 256, width = 256)
   ZOOM_MAX <- 18
@@ -36,70 +42,6 @@ get_ee_image_url <- function(image) {
   map_id <- ee$data$getMapId(list(image = image))
   url <- map_id[["tile_fetcher"]]$url_format
   url
-}
-
-
-
-#' Add legend to EarthEngineMap objects
-#' @noRd
-ee_add_legend <- function(m, eeObject, visParams, name) {
-  ee_obj_class <- class(eeObject)
-  type <- ee_obj_class[ee_obj_class %in%  ee_get_spatial_objects("All")]
-  if (type == "ee.image.Image") {
-    # add legend only to one-band images
-    if (is.null(visParams$bands) | length(visParams$bands) == 1) {
-      if (is.null(visParams$max) | is.null(visParams$min)) {
-        eeimage_type <- eeObject$bandTypes()$getInfo()
-        eeimage_type_min <- eeimage_type[[1]]$min
-        # Added to deal with PixelType Images
-        if (is.null(eeimage_type_min)) {
-          eeimage_type_min <- 0
-        }
-
-        eeimage_type_max <- eeimage_type[[1]]$max
-        if (is.null(eeimage_type_max)) {
-          eeimage_type_max <- 1
-        }
-
-        # This happens in constant images ee.Image(0) with no vizparams
-        if (eeimage_type_min == eeimage_type_max) {
-          eeimage_type_min <- eeimage_type_min
-          eeimage_type_max <- eeimage_type_max*2
-        }
-      }
-      if (is.null(visParams$max)) {
-        visParams$max <- eeimage_type_max
-      }
-      if (is.null(visParams$min)) {
-        visParams$min <- eeimage_type_min
-      }
-      if (is.null(visParams$palette)) {
-        visParams$palette <- c("000000", "FFFFFF")
-      }
-      visParams$palette <- sprintf("#%s", gsub("#", "",visParams$palette))
-      pal <- leaflet::colorNumeric(visParams$palette, c(visParams$min, visParams$max))
-      m <- m %>%
-        leaflet::addLegend(
-          position = "bottomright",
-          pal = pal,
-          values = c(visParams$min, visParams$max),
-          opacity = 1,
-          title = name
-        )
-
-      # Extra parameters to EarthEngineMap objects that inherit from
-      # one single-band ee$Image and active legend = TRUE
-      m$rgee$min <- visParams$min
-      m$rgee$max <- visParams$max
-      m$rgee$palette <-  list(pal)
-      m$rgee$legend <-  TRUE
-      m
-    } else {
-      m
-    }
-  } else {
-    m
-  }
 }
 
 

@@ -409,3 +409,33 @@ test_that("image to asset",{
   mess <- ee_manage_delete(assetid)
   expect_equal(mess, TRUE)
 })
+
+
+test_that("image to asset",{
+  expect_error(
+    ee_image_to_gcs(
+      image = image_test,
+      bucket = NULL,
+      fileFormat = "GEOTIFF"
+    )
+  )
+
+  expect_error(
+    ee_image_to_gcs(
+      image = image_test,
+      bucket = NULL,
+      fileFormat = "GEOTIFF"
+    )
+  )
+})
+
+test_that("image to asset",{
+  rgee:::ee_get_typeimage_size("int") +
+  rgee:::ee_get_typeimage_size("INT") +
+  rgee:::ee_get_typeimage_size("double") +
+  rgee:::ee_get_typeimage_size("float") +
+  rgee:::ee_get_typeimage_size("int8") +
+  rgee:::ee_get_typeimage_size("int16") +
+  rgee:::ee_get_typeimage_size("int32") -> result
+  expect_equal(result, 248)
+})

@@ -11,6 +11,22 @@ vignette: >
   %\VignetteIndexEntry{NEWS}
   %\VignetteEncoding{UTF-8}
 ---
+# rgee 1.1.0
+
+- re-coded the Map and R6Map modules to simplify the maintenance. Many bugs were solved.
+- ee_utils_get_crs now call to the web.archive.org if spatialreference is shut down.
+- Math module and subsetting module were migrated to [rgeeExtra](https://github.com/r-earthengine/rgeeExtra).
+- In ee_Initialize, the "email" parameter was renamed to "user".
+- ee_get is now an internal function of rgee. A new/faster version of ee_get is available in rgeeExtra.
+- Support to display COG resources. See Map or R6Map examples.
+- rgee now supports googledrive version 2.0.0.
+- Obtain COG metadata (`ee_utils_cog_metadata`).
+- New test unit tests.
+- Solve a bug in `ee_help`.
+- `Map$addLegend` supports categorical legends in leaflet interactive maps.
+- New logos :) 
+
+
 # rgee 1.0.9
 
 - Accessing the Earth Engine Data Catalog via '$' thanks to the [Earth-Engine-Datasets-List](https://github.com/samapriya/Earth-Engine-Datasets-List) created and supported by [@samapriya](https://github.com/samapriya).
@@ -22,11 +38,11 @@ tan, and tanh.) to `ee$Image`.
 - Logic operators (!, &, |) to `ee$Image`.
 - Arithmetic operators (+, -, *, /, ^, %%, %/%) to `ee$Image`.
 - Subsetting operators ('[[<-', '[[') to `ee$Image` and `ee$ImageCollection`.
-- GH Action to automatica updated the Earth Engine Python API.
+- GH Action to automatically updated the Earth Engine Python API.
 - `ee_as_sf(..., via = "getInfo")` does not write in temp folder.
 - `ee_as_sf` now returns by default a GeoJSON instead of a ESRI shapefile.
 - When EarthEngineMaps have the same name, a random hex string is added to the second map.
-- Fix a bug in `sf_as_ee` that add `id` colum to the results.
+- Fix a bug in `sf_as_ee` that add `id` column to the results.
 - `ee_extract` now supports lazy evaluation and containers `drive` and `gcs`.
 - R6, class to display Earth Engine (EE) spatial objects, added.
 - Map is now a `R6` object instead of a environment.
