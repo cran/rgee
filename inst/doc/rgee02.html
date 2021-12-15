@@ -1539,10 +1539,10 @@ src: url(data:font/ttf;base64,AAEAAAASAQAABAAgR0RFRnC0bdgAAZ5sAAAB6kdQT1Ps533/AA
     font-weight: bold;
   }
 </style>
-<p>Thanks to <strong>reticulate</strong> is it possible embedding a Python session within an R session. The <strong><a href="https://pypi.org/project/earthengine-api/">Earth Engine Python API</a></strong> and <strong>rgee</strong> share the <strong>same modules, classes, functions, and methods</strong>. In other words, the logic of the syntax is the same and just as fast (just change <strong>.</strong> by a <strong>$</strong>). Notwithstanding, differences in the language design of R and Python might cause some problems in specific scenarios. We identify <strong>four</strong> bug-potential cases. Each of them is explained in-depth below.</p>
+<p>Thanks to <strong>reticulate</strong> is it possible to embed a Python session within an R session. The <strong><a href="https://pypi.org/project/earthengine-api/">Earth Engine Python API</a></strong> and <strong>rgee</strong> share the <strong>same modules, classes, functions, and methods</strong>. In other words, the logic of the syntax is the same and just as fast (just change <strong>.</strong> by a <strong>$</strong>). Notwithstanding, differences in the language design of R and Python might cause some problems in specific scenarios. We identify <strong>four</strong> bug-potential cases. Each of them is explained in-depth below.</p>
 <div id="the-map-message-error" class="section level3">
 <h3><strong>1. The map message error:</strong></h3>
-<p>This issue happens when the <strong>map</strong> method is used under the next two cases: (1) users employing a reticulate version lower than &lt; 1.14 (please update it!); and (2) if you are leading with <strong>ee$List</strong> objects. For instance:</p>
+<p>This issue happens when the <strong>map</strong> method is used while: (1) running a reticulate version lower than &lt; 1.14 (please update it!); or (2) leading with <strong>ee$List</strong> objects. For instance:</p>
 <pre class="r"><code>library(rgee)
 ee$Initialize()
 mylist = ee$List$sequence(10)
@@ -1580,14 +1580,14 @@ mynewlist$getInfo()
 </div>
 <div id="do-not-forget-the-l" class="section level3">
 <h3><strong>2. Do not forget the L</strong></h3>
-<p>By default, when you define a number in R it will produce a <strong>double precision</strong> value. This does not happen in Python because, by default it will create a <strong>int</strong> value.</p>
+<p>By default, when you define a number in R it will produce a <strong>double precision</strong> value. This does not happen in Python because, by default it will create an <strong>int</strong> value.</p>
 <p><strong>Python</strong></p>
 <pre class="python"><code>type(1)
 #&gt; &lt;class &#39;int&#39;&gt;</code></pre>
 <p><strong>R</strong></p>
 <pre class="r"><code>class(1)
 #&gt; [1] &quot;numeric&quot;</code></pre>
-<p>But why does this matter? Let’s explain it with an example:</p>
+<p>But why does this matter? Let’s explain with an example:</p>
 <p><strong>Python</strong></p>
 <pre class="python"><code>ee.Initialize()
 and_bitwise = ee.Number(32).bitwiseAnd(100)
@@ -1605,14 +1605,14 @@ Traceback (most recent call last):
   File &quot;/home/aybarpc01/.local/lib/python3.7/site-packages/ee/data.py&quot;, line 1186, in send_
     raise ee_exception.EEException(json_content[&#39;error&#39;][&#39;message&#39;])
 ee.ee_exception.EEException: Number.bitwiseAnd: Bitwise operands must be integer only.</code></pre>
-<p>Users need to take into consideration that most of the arguments of the Earth Engine methods are strict to admit only <strong>integer values</strong>. The creation of integers in R is quite simple, you just need to add the letter <strong>L</strong> to the end of the specific number or employ the function <code>as.integer</code>. The <strong>correct code</strong> in R would be:</p>
+<p>Users need to take into consideration that most of the arguments of the Earth Engine methods are strict to admit only <strong>integer values</strong>. The creation of integers in R is quite simple; you just need to add the letter <strong>L</strong> to the end of the specific number or employ the function <code>as.integer</code>. The <strong>correct code</strong> in R would be:</p>
 <pre class="r"><code>and_bitwise = ee$Number(32L)$bitwiseAnd(100L)
 and_bitwise$getInfo()
 #&gt; [1] 32</code></pre>
 </div>
 <div id="be-careful-with-eedate" class="section level3">
 <h3><strong>3. Be careful with ee$Date</strong></h3>
-<p>This problem also appears due to differences between the design of R and Python as programming languages. Currently, R only support integer data type of 32 bits. Such integers can only count up to about 2 billion. Unfortunately, this range is extremely insufficient to deal with <a href="https://developers.google.com/earth-engine/glossary/">Google Earth Engine timestamp</a> which is saved in milliseconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">UNIX epoch</a>.</p>
+<p>This problem also appears due to differences between the design of R and Python as programming languages. Currently, R only supports integer data type of 32 bits. Such integers can only count up to about 2 billion. Unfortunately, this range is insufficient to deal with <a href="https://developers.google.com/earth-engine/glossary/">Google Earth Engine timestamp</a> which is saved in milliseconds since the <a href="https://en.wikipedia.org/wiki/Unix_time">UNIX epoch</a>.</p>
 <p><strong>Python</strong></p>
 <pre class="python"><code>my_date = ee.Date(&#39;1990-01-01&#39;)
 my_date.getInfo()
@@ -1625,7 +1625,7 @@ my_date$getInfo()
 #&gt; 
 #&gt; $value
 #&gt; [1] -208192512</code></pre>
-<p>The problems with <code>ee$Date</code> just appear in the last mile (Python to R or vice-versa, <code>reticulate</code>), and it should not be a trouble if treated with care. <code>rgee</code> implement two functions to deal with Earth Engine dates: <code>eedate_to_rdate</code> and <code>rdate_to_eedate</code>.</p>
+<p>The problems with <code>ee$Date</code> just appear in the last mile (Python to R or vice-versa, <code>reticulate</code>), and they should not be too severe if treated with care. <code>rgee</code> implements two functions to deal with Earth Engine dates: <code>eedate_to_rdate</code> and <code>rdate_to_eedate</code>.</p>
 <pre class="r"><code># Era5 dataset
 era_img &lt;- ee$ImageCollection(&quot;ECMWF/ERA5/DAILY&quot;)$
   filterDate(&quot;2019-01-01&quot;, &quot;2019-12-31&quot;)$
@@ -1639,7 +1639,7 @@ eedate_to_rdate(ee_date = ee_date, timestamp = TRUE)
 </div>
 <div id="take-into-consideration-reserved-words-in-r" class="section level3">
 <h3><strong>4. Take into consideration reserved words in R</strong></h3>
-<p>A reserved word is a word that cannot be used as an identifier, such as the name of a variable or a function. According with <code>?reserved</code>, the reserved words in R’s parser are: <code>if</code>, <code>else</code>, <strong><code>repeat</code></strong>, <code>while</code>, <code>function</code>, <code>for</code>, <code>in</code>, <code>next</code>, <code>break</code>, <code>TRUE</code>, <code>FALSE</code>, <code>NULL</code>, <code>Inf</code>, <code>NaN</code>, <code>NA</code>, <code>NA_integer_</code>, <code>NA_real_</code>, <code>NA_complex_</code>, <code>NA_character_</code>. From all these words, the only one that is part of the Earth Engine API is <strong>repeat</strong>.</p>
+<p>A reserved word is a word that cannot be used as an identifier, such as the name of a variable or a function. According with <code>?reserved</code>, the reserved words in R’s parser are: <code>if</code>, <code>else</code>, <strong><code>repeat</code></strong>, <code>while</code>, <code>function</code>, <code>for</code>, <code>in</code>, <code>next</code>, <code>break</code>, <code>TRUE</code>, <code>FALSE</code>, <code>NULL</code>, <code>Inf</code>, <code>NaN</code>, <code>NA</code>, <code>NA_integer_</code>, <code>NA_real_</code>, <code>NA_complex_</code>, <code>NA_character_</code>. Of these words, the only one that is part of the Earth Engine API is <strong>repeat</strong>.</p>
 <p>We can find <strong>repeat</strong> as a method for an Earth Engine List object. See <strong><a href="https://developers.google.com/earth-engine/apidocs/ee-list-repeat"><code>ee$List$repeat(value, count)</code></a></strong>:</p>
 <pre class="r"><code>library(rgee)
 ee_Initialize()

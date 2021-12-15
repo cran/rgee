@@ -4,12 +4,22 @@ skip_if_no_pypkg()
 
 ee_Initialize(gcs = TRUE, drive = TRUE)
 
-test_that("local_to_gcs - character",{
+test_that("local_to_gcs - character - fine grained access",{
   skip_if_no_credentials()
   # Define an image.
   tif <- system.file("tif/L7_ETMs.tif", package = "stars")
-  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_f())
-  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_f(), quiet = TRUE)
+  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_f(), predefinedAcl = "private")
+  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_f(), predefinedAcl = "private", quiet = TRUE)
+  expect_type(gcsuri,'character')
+})
+
+
+test_that("local_to_gcs - character - uniform access",{
+  skip_if_no_credentials()
+  # Define an image.
+  tif <- system.file("tif/L7_ETMs.tif", package = "stars")
+  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_uniform_f(), predefinedAcl = "bucketLevel")
+  gcsuri <- local_to_gcs(x = tif, bucket = gcs_bucket_uniform_f(), predefinedAcl = "bucketLevel", quiet = TRUE)
   expect_type(gcsuri,'character')
 })
 

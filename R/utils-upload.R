@@ -4,6 +4,8 @@
 #'
 #' @param x Character. filename.
 #' @param bucket bucket name you are uploading to
+#' @param predefinedAcl Specify user access to object. Passed to
+#' \code{googleCloudStorageR::gcs_upload}.
 #' @param quiet Logical. Suppress info message.
 #' @return Character that represents the full path of the object in the GCS
 #' bucket specified.
@@ -24,6 +26,7 @@
 #' @export
 local_to_gcs <- function(x,
                          bucket = NULL,
+                         predefinedAcl = "private",
                          quiet = FALSE) {
   # check packages
   ee_check_packages("rgee::ee_download_gcs", "googleCloudStorageR")
@@ -32,7 +35,7 @@ local_to_gcs <- function(x,
     stop("Cloud Storage bucket was not defined")
   }
 
-  if (is.na(getOption("rgee.gcs.auth"))) {
+  if (is.na(getOption("rgee.gcs.auth")) || is.null(getOption("rgee.gcs.auth"))) {
     stop(
       "Google Cloud Storage credentials were not loaded.",
       ' Run ee_Initialize(..., gcs = TRUE)',
@@ -47,7 +50,8 @@ local_to_gcs <- function(x,
       googleCloudStorageR::gcs_upload(
         file = x,
         bucket = bucket,
-        name = basename(x)),
+        name = basename(x),
+        predefinedAcl = predefinedAcl),
         silent = TRUE
     )
     while (any(class(files_gcs) %in% "try-error") & count < 5) {
@@ -55,9 +59,13 @@ local_to_gcs <- function(x,
         googleCloudStorageR::gcs_upload(
           file = x,
           bucket = bucket,
-          name = basename(x)),
+          name = basename(x),
+          predefinedAcl = predefinedAcl),
           silent = TRUE
         )
+      if (count == 4) {
+        cat(files_gcs)
+      }
       count <- count + 1
     }
   } else {
@@ -66,7 +74,8 @@ local_to_gcs <- function(x,
         googleCloudStorageR::gcs_upload(
           file = x,
           bucket = bucket,
-          name = basename(x)
+          name = basename(x),
+          predefinedAcl = predefinedAcl
         )
       ),
       silent = TRUE
@@ -77,7 +86,8 @@ local_to_gcs <- function(x,
           googleCloudStorageR::gcs_upload(
             file = x,
             bucket = bucket,
-            name = basename(x)
+            name = basename(x),
+            predefinedAcl = predefinedAcl
           )
         ),
         silent = TRUE
