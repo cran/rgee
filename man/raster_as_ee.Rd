@@ -8,7 +8,7 @@ raster_as_ee(
   x,
   assetId,
   bucket = NULL,
-  predefinedAcl = "private",
+  predefinedAcl = "bucketLevel",
   command_line_tool_path = NULL,
   overwrite = FALSE,
   monitoring = TRUE,
@@ -72,7 +72,7 @@ gcs_to_ee_image(
 )
 
 # OPTIONAL: Monitoring progress
-ee_monitoring()
+ee_monitoring(max_attempts = Inf)
 
 # OPTIONAL: Display results
 ee_stars_01 <- ee$Image(assetId)

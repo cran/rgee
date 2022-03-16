@@ -25,7 +25,7 @@
 #' If unspecified, defaults to TRUE.
 #' @param bucket Character. Name of the bucket (GCS) to save intermediate files
 #' (ignore if \code{via} is not defined as "gcs_to_asset").
-#' @param predefinedAcl Specify user access to object. Passed to 
+#' @param predefinedAcl Specify user access to object. Passed to
 #' \code{googleCloudStorageR::gcs_upload}.
 #' @param command_line_tool_path Character. Path to the Earth Engine command line
 #' tool (CLT). If NULL, rgee assumes that CLT is set in the system PATH.
@@ -115,14 +115,14 @@
 #'   monitoring = FALSE,
 #'   via = 'gcs_to_asset'
 #' )
-#' ee_monitoring()
+#' ee_monitoring(max_attempts = Inf)
 #' }
 #' @export
 sf_as_ee <- function(x,
                      via = 'getInfo',
                      assetId = NULL,
                      bucket = NULL,
-                     predefinedAcl = "private",
+                     predefinedAcl = "bucketLevel",
                      command_line_tool_path = NULL,
                      overwrite = TRUE,
                      monitoring = TRUE,
@@ -228,7 +228,7 @@ sf_as_ee <- function(x,
 
     if (isTRUE(monitoring)) {
       ee$batch$Task$start(ee_task)
-      ee_monitoring(ee_task)
+      ee_monitoring(ee_task, max_attempts = Inf)
       ee$FeatureCollection(assetId)
     } else {
       ee$batch$Task$start(ee_task)
@@ -305,7 +305,7 @@ sf_as_ee <- function(x,
     )
 
     if (isTRUE(monitoring)) {
-      ee_monitoring()
+      ee_monitoring(max_attempts = Inf)
       ee$FeatureCollection(assetId)
     } else {
       ee$FeatureCollection(assetId)

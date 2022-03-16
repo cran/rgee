@@ -9,7 +9,7 @@ sf_as_ee(
   via = "getInfo",
   assetId = NULL,
   bucket = NULL,
-  predefinedAcl = "private",
+  predefinedAcl = "bucketLevel",
   command_line_tool_path = NULL,
   overwrite = TRUE,
   monitoring = TRUE,
@@ -147,6 +147,6 @@ eex <- sf_as_ee(
   monitoring = FALSE,
   via = 'gcs_to_asset'
 )
-ee_monitoring()
+ee_monitoring(max_attempts = Inf)
 }
 }
