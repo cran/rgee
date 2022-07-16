@@ -1,6 +1,6 @@
 Package: rgee
 Title: R Bindings for Calling the 'Earth Engine' API
-Version: 1.1.3
+Version: 1.1.4
 Authors@R: 
     c(person(given = "Cesar",
              family = "Aybar",
@@ -107,7 +107,7 @@ BugReports: https://github.com/r-spatial/rgee/issues/
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: no
-Packaged: 2022-03-14 08:35:18 UTC; csaybar
+Packaged: 2022-07-15 12:50:17 UTC; csaybar
 Author: Cesar Aybar [aut, cre] (<https://orcid.org/0000-0003-2745-9535>),
   Wu Qiusheng [ctb] (<https://orcid.org/0000-0001-5437-4073>),
   Lesly Bautista [ctb] (<https://orcid.org/0000-0003-3523-8687>),
@@ -130,4 +130,4 @@ Author: Cesar Aybar [aut, cre] (<https://orcid.org/0000-0003-2745-9535>),
     https://github.com/openjournals/joss-reviews/issues/2272/)
 Maintainer: Cesar Aybar <csaybar@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-03-16 15:50:02 UTC
+Date/Publication: 2022-07-16 07:30:11 UTC
