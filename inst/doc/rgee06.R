@@ -53,29 +53,29 @@ knitr::opts_chunk$set(eval = FALSE)
 #    entity_type = "allUsers"
 #  )
 
-## ----eval=TRUE, echo=FALSE----------------------------------------------------
-library(rgee)
-gcs_l8_name  <- "l8demo2" # name of the image in GCS.
-BUCKET_NAME <- "rgee_examples" # set here your bucket name
+## ----eval=FALSE, echo=FALSE---------------------------------------------------
+#  library(rgee)
+#  gcs_l8_name  <- "l8demo2" # name of the image in GCS.
+#  BUCKET_NAME <- "rgee_examples" # set here your bucket name
 
-## ----eval=TRUE----------------------------------------------------------------
-img_id <- sprintf("https://storage.googleapis.com/%s/%s.tif", BUCKET_NAME, gcs_l8_name)
-visParams <- list(bands=c("SR_B4","SR_B3","SR_B2"), min = 8000, max = 20000, nodata = 0)
-Map$centerObject(img_id)
-Map$addLayer(
-  eeObject = img_id, 
-  visParams = visParams,
-  name = "My_first_COG",
-  titiler_server = "https://api.cogeo.xyz/"
-)
+## ----eval=FALSE---------------------------------------------------------------
+#  img_id <- sprintf("https://storage.googleapis.com/%s/%s.tif", BUCKET_NAME, gcs_l8_name)
+#  visParams <- list(bands=c("SR_B4","SR_B3","SR_B2"), min = 8000, max = 20000, nodata = 0)
+#  Map$centerObject(img_id)
+#  Map$addLayer(
+#    eeObject = img_id,
+#    visParams = visParams,
+#    name = "My_first_COG",
+#    titiler_server = "https://api.cogeo.xyz/"
+#  )
 
-## ----eval=TRUE----------------------------------------------------------------
-visParams <- list(expression = "B4,B3,B2", rescale = "8000, 20000", resampling_method = "cubic")
-Map$addLayer(
-  eeObject = img_id, 
-  visParams = visParams,
-  name = "My_first_COG",
-  titiler_server = "https://api.cogeo.xyz/",
-  titiler_viz_convert = FALSE
-)
+## ----eval=FALSE---------------------------------------------------------------
+#  visParams <- list(expression = "B4,B3,B2", rescale = "8000, 20000", resampling_method = "cubic")
+#  Map$addLayer(
+#    eeObject = img_id,
+#    visParams = visParams,
+#    name = "My_first_COG",
+#    titiler_server = "https://api.cogeo.xyz/",
+#    titiler_viz_convert = FALSE
+#  )
 

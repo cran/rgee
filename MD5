@@ -1,4 +1,4 @@
-9fea4f98cf5368b422731ff58ef5dfa5 *DESCRIPTION
+28b57a5e4e224205743756ae1e0eceb8 *DESCRIPTION
 c683098b8bd45e3d6c84d003ed7bf6e7 *NAMESPACE
 d5c4c8ad95ded45a26b52343a12e4e85 *NEWS.md
 d41d8cd98f00b204e9800998ecf8427e *R/Deprecated.R
@@ -23,7 +23,7 @@ a1047e99e55d93e708422ff9c4ed5546 *R/ee_mapViewLayersControl.R
 6dd03c3489f17e81f301d5307864c8ec *R/ee_module.R
 f4adc07f791d8ea0865f8819872f222b *R/ee_print.R
 87d3d02e2f4c2d52e2094adabab3f04a *R/ee_utils.R
-ad8c76afb3716ddbe7484267df868636 *R/ee_version.R
+0ac38bbf59aefefcbf4091e2ffa675c4 *R/ee_version.R
 a0d810c772d237cd3e7d70ac1a9bf9f8 *R/print.R
 f1d0d6282d819a86703c5f9feeda341b *R/raster_as_ee.R
 b680f73efa901a7ee39dfd69a23cd4a7 *R/rgee-package.R
@@ -35,10 +35,10 @@ b7f0b72ee3b6077519eb5d665f3058b1 *R/utils-upload.R
 903a73828410a020c4b39c9711cd6b7b *R/zzz.R
 27a1e6afab0cc091add5c10116a21a47 *build/vignette.rds
 036ecc5933b400f75a49d9efd51b83e2 *inst/WORDLIST
-d891b7b420bb657c15ee01ec8367017b *inst/dataset.json
+b0803cdc5d711ad51d250e20655abd31 *inst/dataset.json
 8d25517cb7132117c77957d0194d3c71 *inst/doc/rgee01.R
 890e1252abd22d53344a99e5ac17a7ac *inst/doc/rgee01.Rmd
-b47a3fb8e087730d37765d972b2caebc *inst/doc/rgee01.html
+23ac14e19ce4fc58266acc08c98c7aa1 *inst/doc/rgee01.html
 025a16f39892b75055ef64b34c9831df *inst/doc/rgee02.R
 baf79480d559081c4c30220d42c99085 *inst/doc/rgee02.Rmd
 853c2aff479927fbd58cbef1aa5f2213 *inst/doc/rgee02.html
@@ -51,9 +51,9 @@ baf79480d559081c4c30220d42c99085 *inst/doc/rgee02.Rmd
 d3004a1ef373fe2df2d41c4a0f4ab9ec *inst/doc/rgee05.R
 14cd184bbabddd682d3c6096c5ec23e6 *inst/doc/rgee05.Rmd
 6fdbb403db0d2d9ec5833f40630a6350 *inst/doc/rgee05.html
-c2b06da3e1d8d51f2b16e1677333cd72 *inst/doc/rgee06.R
-374b8766ca22903e06bee21c156200e1 *inst/doc/rgee06.Rmd
-b1e59c455a034f468b1670577082527c *inst/doc/rgee06.html
+5bd43f62d133506a272be7088ca2f339 *inst/doc/rgee06.R
+9964734139b508d5a8e6b34b4df1e9db *inst/doc/rgee06.Rmd
+237a255653766715bf44bdf9bf768ce3 *inst/doc/rgee06.html
 68b329da9893e34099c7d8ad5cb9c940 *inst/python/__init__.py
 7eed182548d937e81c13f96c9821f0d4 *inst/python/__pycache__/ee_extract.cpython-38.pyc
 7af2d1e55ac4fd804f0d7d5032235880 *inst/python/__pycache__/ee_utils.cpython-310.pyc
@@ -190,4 +190,4 @@ baf79480d559081c4c30220d42c99085 *vignettes/rgee02.Rmd
 661594fcf908c5f653f967720c78448c *vignettes/rgee03.Rmd
 518742dc66f820634828013296e3d89b *vignettes/rgee04.Rmd
 14cd184bbabddd682d3c6096c5ec23e6 *vignettes/rgee05.Rmd
-374b8766ca22903e06bee21c156200e1 *vignettes/rgee06.Rmd
+9964734139b508d5a8e6b34b4df1e9db *vignettes/rgee06.Rmd
