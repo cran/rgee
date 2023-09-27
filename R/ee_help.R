@@ -2,7 +2,7 @@
 #' @param eeobject Earth Engine Object to print documentation.
 #' @param browser Logical. Display documentation in the browser.
 #' @importFrom reticulate py_function_docs
-#' @importFrom utils tail
+#' @importFrom utils tail help
 #' @family helper functions
 #' @return No return value, called for displaying Earth Engine documentation.
 #' @examples
@@ -18,11 +18,31 @@
 #' }
 #' @export
 ee_help <- function(eeobject, browser = FALSE) {
+  if (!is.character(eeobject)) {
+    eeobject_name <- deparse(substitute(eeobject))
+    eeobject_name <- gsub(".*\\$(.*)$", "\\1", eeobject_name)
+  } else {
+    eeobject_name <- eeobject
+    eeobject_name <- gsub(".*\\$(.*)$", "\\1", eeobject_name)
+  }
+
+  # If the function name exist in rgeeExtra, then stop the process.
+  image_mans <- rgeeExtracheckmans(eeobject_name, "image")
+  if (!is.na(image_mans[1])) {
+    return(image_mans)
+  }
+
+  ic_mans <- rgeeExtracheckmans(eeobject_name, "ic")
+  if (!is.na(ic_mans[1])) {
+    return(ic_mans)
+  }
+
   #obs : simple earth engine objects like ee$Number will return NULL
   eequery_scope <- try(
     expr = unlist(jsonlite::parse_json(eeobject$serialize())$scope),
     silent = TRUE
   )
+
   # If eeobject is an Earth Engine object get the last function
   if (!inherits(eequery_scope, 'try-error') & !is.null(eequery_scope)) {
     search_funnames <- grepl("functionName", names(eequery_scope))
@@ -132,6 +152,7 @@ ee_help <- function(eeobject, browser = FALSE) {
     on.exit(close(fileConn), add = TRUE)
     browseURL(temp_file)
   }
+
   invisible(temp_file)
 }
 
@@ -589,4 +610,15 @@ ee_module_help <- function() {
     returns = NULL,
     title = "Main Earth Engine module"
   )
+}
+
+#' Create init table - R Documentation Simple
+#' @noRd
+rgeeExtracheckmans <- function(fun_name, type="image") {
+  if (type=="image") {
+    checkmanfiles <- sprintf("%s%s", "ee_Image_", fun_name)
+  } else if (type=="ic") {
+    checkmanfiles <- sprintf("%s%s", "ee_ImageCollection_", fun_name)
+  }
+  utils::help(checkmanfiles, package = "rgeeExtra", verbose = FALSE)
 }

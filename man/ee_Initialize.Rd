@@ -14,34 +14,47 @@ ee_Initialize(
   http_transport = NULL,
   project = NULL,
   quiet = FALSE,
+  auth_mode = "notebook",
+  auth_quiet = FALSE,
   ...
 )
 }
 \arguments{
-\item{user}{Character (optional, e.g. \code{data.colec.fbf}). The user
-argument is used to create a folder inside the path
-\code{~/.config/earthengine/} that save all the credentials for a specific
-Google identity.}
+\item{user}{Character (optional, e.g. \code{data.colec.fbf}).  The user parameter
+is used to create a folder inside the path \code{~/.config/earthengine/}
+where all the credentials for a specific Google identity are saved.}
 
-\item{drive}{Logical (optional). If TRUE, the drive credential
-is cached in the path \code{~/.config/earthengine/}.}
+\item{drive}{Logical (optional). If set to TRUE, the drive credential will be
+cached in the path \code{~/.config/earthengine/}.}
 
 \item{gcs}{Logical (optional). If TRUE, the Google Cloud Storage
-credential is cached in the path \code{~/.config/earthengine/}.}
+credential will be cached in the path \code{~/.config/earthengine/}.}
 
-\item{credentials}{OAuth2 credentials. 'persistent' (default) means
-use credentials already stored in the filesystem, or raise an explanatory
-exception guiding the user to create those credentials.}
+\item{credentials}{OAuth2 GEE credentials. 'persistent' (default) means it will
+use the GEE credentials already stored in the filesystem. If the credentials are not found,
+it will raise an explanatory exception guiding the user to create those credentials.}
 
 \item{opt_url}{The base url for the EarthEngine REST API to connect to.}
 
 \item{cloud_api_key}{An optional API key to use the Cloud API.}
 
-\item{http_transport}{The http transport method to use when making requests.}
+\item{http_transport}{The HTTP transport method to use for making requests}
 
-\item{project}{The client project ID or number to use when making API calls.}
+\item{project}{The client project ID or number to be used for making API calls.}
 
 \item{quiet}{Logical. Suppress info messages.}
+
+\item{auth_mode}{The authentication mode. One of:
+\itemize{
+\item{1. }{paste - send user to accounts.google.com to get a pastable token}
+\item{2. }{notebook - send user to notebook authenticator page}
+\item{3. }{gcloud - use gcloud to obtain credentials (will set appdefault)}
+\item{4. }{appdefault - read from existing $GOOGLE_APPLICATION_CREDENTIALS file}
+\item{5. }{None - a default mode is chosen based on your environment.}
+}}
+
+\item{auth_quiet}{Logical. \link{ee_Authenticate} quiet parameter. If TRUE,
+do not require interactive prompts and force --no-browser mode for gcloud.}
 
 \item{...}{Extra exporting argument. See \link{ee_Authenticate}.}
 }
@@ -61,9 +74,7 @@ Cloud Storage resources using the R packages googledrive and
 googlecloudStorageR, respectively. By default, rgee does not require
 them. These are only necessary to enable rgee I/O functionality.
 All user credentials are saved in the directory
-\code{~/.config/earthengine/}. If a user does not specify the "user"
-argument, all user credentials are saved in the the subdirectory
-\code{~/.config/earthengine/ndef}.
+\code{~/.config/earthengine/}.
 }
 \examples{
 \dontrun{

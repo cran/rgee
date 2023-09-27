@@ -14,18 +14,20 @@ ee_gcs_to_local(
 )
 }
 \arguments{
-\item{task}{List generated after finished an EE task correctly. See details.}
+\item{task}{List generated after the EE task is correctly finished. See details.}
 
 \item{dsn}{Character. Output filename. If missing, a temporary
-file (i.e. \code{tempfile()}) is assigned.}
+file (i.e. \code{tempfile()}) will be assigned.}
 
 \item{public}{Logical. If TRUE, a public link to Google Cloud Storage
-resource is created.}
+resource is created. "Public Access Prevention" may need to be removed.
+In addition, the bucket access control configuration must be "fine-grained".
+See GCS public files documentation for more details.}
 
 \item{metadata}{Logical. If TRUE, export the metadata related to the Google
 Cloud Storage resource. See details.}
 
-\item{overwrite}{A boolean argument that indicates indicating
+\item{overwrite}{A boolean argument that indicates
 whether "filename" should be overwritten. By default TRUE.}
 
 \item{quiet}{Logical. Suppress info message}
@@ -40,12 +42,12 @@ Move results of an EE task saved in Google Cloud Storage to a local
 directory.
 }
 \details{
-The task argument needs "COMPLETED" task state to work due to that the parameters
-necessaries to locate the file into Google Cloud Storage are obtained from \cr
-\code{ee$batch$Export$*$toCloudStorage(...)$start()$status()}.
+The task argument requires a status of "COMPLETED" because
+the parameters required to identify EE items in Google Drive
+are retrieved from \code{ee$batch$Export$*$toCloudStorage(...)$start()$status()}.
 
-If the argument \code{metadata} is TRUE, a list with the
-following elements is exported join with the output filename (dsn):
+If the argument \code{metadata} is TRUE, a list containing the following
+elements is exported and appended to the output filename (dsn):
 
 \itemize{
 \item{\bold{ee_id: }}{Name of the Earth Engine task.}

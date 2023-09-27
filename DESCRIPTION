@@ -1,6 +1,6 @@
 Package: rgee
 Title: R Bindings for Calling the 'Earth Engine' API
-Version: 1.1.5
+Version: 1.1.7
 Authors@R: 
     c(person(given = "Cesar",
              family = "Aybar",
@@ -90,16 +90,14 @@ Description: Earth Engine <https://earthengine.google.com/> client library for R
   and metadata display. See <https://r-spatial.github.io/rgee/> for further details.
 License: Apache License (>= 2.0)
 Encoding: UTF-8
-LazyData: false
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 Depends: R (>= 3.3.0)
-Imports: methods, reticulate (>= 1.24), rstudioapi (>= 0.7), leaflet
+Imports: methods, reticulate (>= 1.27), rstudioapi (>= 0.7), leaflet
         (>= 2.0.2), magrittr, jsonlite, processx, leafem, crayon, R6,
         cli
-Suggests: leaflet.extras2, magick, geojsonio, sf, stars, googledrive
-        (>= 2.0.0), googleCloudStorageR (>= 0.6.0), gargle, raster,
-        rgdal, httr, digest, spelling, testthat, future, covr, knitr,
-        rmarkdown, png
+Suggests: magick, geojsonio, sf, stars, googledrive (>= 2.0.0), gargle,
+        httr, digest, testthat, future, terra, covr, knitr, rmarkdown,
+        png, googleCloudStorageR, leaflet.extras2, spelling, raster
 URL: https://github.com/r-spatial/rgee/,
         https://r-spatial.github.io/rgee/,
         https://github.com/google/earthengine-api/
@@ -107,7 +105,7 @@ BugReports: https://github.com/r-spatial/rgee/issues/
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: no
-Packaged: 2022-09-13 02:43:51 UTC; csaybar
+Packaged: 2023-09-27 08:03:41 UTC; gonzalo
 Author: Cesar Aybar [aut, cre] (<https://orcid.org/0000-0003-2745-9535>),
   Wu Qiusheng [ctb] (<https://orcid.org/0000-0001-5437-4073>),
   Lesly Bautista [ctb] (<https://orcid.org/0000-0003-3523-8687>),
@@ -130,4 +128,4 @@ Author: Cesar Aybar [aut, cre] (<https://orcid.org/0000-0003-2745-9535>),
     https://github.com/openjournals/joss-reviews/issues/2272/)
 Maintainer: Cesar Aybar <csaybar@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-09-13 08:10:06 UTC
+Date/Publication: 2023-09-27 08:30:02 UTC

@@ -4,13 +4,21 @@
 \alias{ee_image_info}
 \title{Approximate size of an EE Image object}
 \usage{
-ee_image_info(image, getsize = TRUE, compression_ratio = 20, quiet = FALSE)
+ee_image_info(
+  image,
+  band_metadata = NULL,
+  getsize = TRUE,
+  compression_ratio = 20,
+  quiet = FALSE
+)
 }
 \arguments{
 \item{image}{Single-band EE Image object.}
 
-\item{getsize}{Logical. If TRUE, the size of the object
-is estimated.}
+\item{band_metadata}{A list with image properties. If NULL it will be  automatically generated.}
+
+\item{getsize}{Logical. If TRUE, the function will estimate the size
+of the object}
 
 \item{compression_ratio}{Numeric. Measurement of the relative data size
 reduction produced by a data compression algorithm (ignored if

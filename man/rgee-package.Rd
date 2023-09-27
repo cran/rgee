@@ -82,7 +82,6 @@ and functions as well as sub-modules (e.g. ee$Image, ee$FeatureCollection$first,
 \tabular{ll}{
 ---------------------------\tab --------------------------------------------------------------------------------------------------- \cr
 \code{\link{ee_clean_container}}\tab Delete files from either a Folder or a Bucket. \cr
-\code{\link{ee_clean_credentials}}\tab Delete Credentials. \cr
 \code{\link{ee_clean_pyenv}}\tab Remove rgee system variables from .Renviron. \cr
 ---------------------------\tab --------------------------------------------------------------------------------------------------- \cr
 }
@@ -303,12 +302,9 @@ Other contributors:
   \item MariaElena Adauto \email{2a.mariaelena@gmail.com} (\href{https://orcid.org/0000-0002-2154-2429}{ORCID}) [contributor]
   \item Gabriel Carrasco \email{gabriel.carrasco@upch.pe} (\href{https://orcid.org/0000-0002-6945-0419}{ORCID}) [contributor]
   \item Henrik Bengtsson \email{henrikb@braju.com} [contributor]
-  \item Jeffrey Hollister \email{hollister.jeff@epa.gov} (Hollister reviewed the package for JOSS, see 
-                        https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
-  \item Gennadii Donchyts (Gena reviewed the package for JOSS, see 
-                        https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
-  \item Marius Appel \email{marius.appel@uni-muenster.de} (Appel reviewed the package for JOSS, see 
-                        https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
+  \item Jeffrey Hollister \email{hollister.jeff@epa.gov} (Hollister reviewed the package for JOSS, see https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
+  \item Gennadii Donchyts (Gena reviewed the package for JOSS, see https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
+  \item Marius Appel \email{marius.appel@uni-muenster.de} (Appel reviewed the package for JOSS, see https://github.com/openjournals/joss-reviews/issues/2272/) [reviewer]
 }
 
 }

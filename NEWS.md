@@ -12,12 +12,27 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# rgee 1.1.3.9000
+# rgee 1.1.7
 
-- ee_Initialize now supports EE API > 0.1.310.
-- ee_Authenticate added.
-- Preventive message added to ee_get_date_ic (thanks @zackarno)
-- Critical bug solved in ee_check, see changes [here](https://github.com/r-spatial/rgee/pull/251/commits/9f6eeb00d5f26c48b7c95aa6c8a4d2feee04c795) (thanks @MartinHoldrege)
+- Add Python Path to ee_Initialize.
+- Fix a bug in ee_image_info strsplit(code, ":") : object 'band_metadata' not found. Thanks @TianyaImpression.
+- Fix a bug in VScode studio when getOption("rgee.print.option") is "simple".
+- ee_as_raster (raster) is deprecated in favour to ee_as_rast (terra).
+- `via` argument in ee_as_stars, and ee_as_rast have a new option called "getDownloadURL".
+
+
+# rgee 1.1.6
+
+- The ee_check function does not authenticate gcloud.
+- ee_Initialize now supports EE API versions greater than 0.1.310.
+- Added ee_Authenticate function for authentication.
+- Added a preventive message to ee_get_date_ic, thanks to @zackarno.
+- Resolved a critical bug in ee_check, view changes here: https://github.com/r-spatial/rgee/pull/251/commits/9f6eeb00d5f26c48b7c95aa6c8a4d2feee04c795, thanks to @MartinHoldrege.
+- rgee now uses 'auth_mode = "notebook"' by default.
+- Added 'ee_clean_user_credentials' function to remove deprecated credentials. This function removes credentials instead of overwriting them, as ee_Authenticate does.
+
+
+
 
 # rgee 1.1.3
 

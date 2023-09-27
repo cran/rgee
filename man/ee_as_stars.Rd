@@ -12,8 +12,9 @@ ee_as_stars(
   container = "rgee_backup",
   scale = NULL,
   maxPixels = 1e+09,
+  grid_batch = 1024 * 1024,
   lazy = FALSE,
-  public = TRUE,
+  public = FALSE,
   add_metadata = TRUE,
   timePrefix = TRUE,
   quiet = FALSE,
@@ -21,27 +22,32 @@ ee_as_stars(
 )
 }
 \arguments{
-\item{image}{ee$Image to be converted into a stars object.}
+\item{image}{ee$Image to be converted into a 'stars' object.}
 
-\item{region}{EE Geometry (ee$Geometry$Polygon) which specifies the region
+\item{region}{EE Geometry (ee$Geometry$Polygon) that specifies the region
 to export. CRS needs to be the same that the argument \code{image}.
 Otherwise, it will be forced. If not specified, image bounds are taken.}
 
 \item{dsn}{Character. Output filename. If missing, a temporary file is
 created.}
 
-\item{via}{Character. Method to export the image. Two methods are
-implemented: "drive", "gcs". See details.}
+\item{via}{Character. Method to export the image. Three methods are
+available: "getDownloadURL", "drive", "gcs". For "drive" and "gcs" see details.
+Use "getDownloadURL" for small images. Default "getDownloadURL".}
 
 \item{container}{Character. Name of the folder ('drive') or bucket ('gcs')
 to be exported.}
 
-\item{scale}{Numeric. The resolution in meters per pixel. Defaults
+\item{scale}{Numeric. Image resolution given in meters per pixel. Defaults
 to the native resolution of the image.}
 
-\item{maxPixels}{Numeric. The maximum allowed number of pixels in the
-exported image. The task will fail if the exported region covers
-more pixels in the specified projection. Defaults to 100,000,000.}
+\item{maxPixels}{Numeric. The maximum allowable number of pixels in the exported
+image. If the exported region covers more pixels than the specified limit in the
+given projection, the task will fail. Defaults to 100,000,000.}
+
+\item{grid_batch}{Numeric. Argument used if 'via' is set as "getDownloadURL".
+The number of pixels to download in each batch without considering the number
+of bands. Default to 1048576 -(1024*1024).}
 
 \item{lazy}{Logical. If TRUE, a \code{\link[future:sequential]{
 future::sequential}} object is created to evaluate the task in the future.
@@ -136,7 +142,14 @@ geometry <- ee$Geometry$Rectangle(
   geodesic = FALSE
 )
 
-## drive - Method 01
+## getDownloadURL - Method 01 (for small images)
+img_02 <- ee_as_stars(
+  image = img,
+  region = geometry,
+  scale = 10
+)
+
+## drive - Method 02
 # Simple
 img_02 <- ee_as_stars(
   image = img,
@@ -155,7 +168,7 @@ img_02 <- ee_as_stars(
 img_02_result <- img_02 \%>\% ee_utils_future_value()
 attr(img_02_result, "metadata") # metadata
 
-## gcs - Method 02
+## gcs - Method 03
 # Simple
 img_03 <- ee_as_stars(
   image = img,
@@ -184,6 +197,7 @@ attr(img_03_result, "metadata") # metadata
 \seealso{
 Other image download functions: 
 \code{\link{ee_as_raster}()},
+\code{\link{ee_as_rast}()},
 \code{\link{ee_as_thumbnail}()},
 \code{\link{ee_imagecollection_to_local}()}
 }
